@@ -14,9 +14,18 @@ Blob Army is a lane-based vertical scroller game where players control a group o
 
 ## Architecture & Technology Stack
 
-- **Platform**: Web browser (HTML5 Canvas)
-- **Framework**: JavaScript with 3D rendering engine
-- **Rendering**: HTML5 Canvas API
+- **Platform**: Web browser
+- **Rendering**: 3D graphics with 45-degree camera perspective
+- **Framework**: JavaScript with 3D rendering capabilities (specific library TBD based on implementation approach)
+
+## Game Parameters
+
+The following parameters are configurable and shared across all implementation approaches:
+
+- **World Scroll Speed**: 200 pixels/second (adjustable for difficulty tuning)
+- **Player Movement Speed**: 300 pixels/second (horizontal movement rate)
+- **Gate Spawn Interval**: Every 2 seconds
+- **Target Frame Rate**: 60 FPS
 
 ---
 
@@ -39,8 +48,10 @@ Establish the fundamental game loop, persistent forward motion (scrolling), cont
 - Obstacles are always spawned and centered directly within one of these two lanes.
 
 **Camera**
-- The viewpoint is fixed directly behind the Blob Group, looking down the path.
-- The camera moves forward at a constant speed, which drives the sensation of speed and the world scrolling.
+- The camera is positioned at a 45-degree angle above and behind the player
+- This creates a 3D perspective view looking down the track
+- The camera is fixed relative to the player (moves with the player)
+- Provides clear visibility of upcoming obstacles while maintaining 3D depth
 
 **Blob Group**
 - Rendered as a group of blobs, but the core hitbox is always in the center
@@ -131,10 +142,21 @@ Establish the fundamental game loop, persistent forward motion (scrolling), cont
 - Clear, readable font using existing Mulish typeface
 
 **Visual Styling**
-- Use existing CSS custom properties for consistency:
-  - `--card-bg: #FFF2F2` (background elements)
-  - `--text-color: #515369` (HUD text)
-  - `--accent-color: #C74646` (important elements)
+- No specific color scheme required for Phase 1
+- Use simple, contrasting colors for visibility (e.g., black background, white text, colored shapes)
+- Color theming will be implemented as a feature in a future phase
+
+### 5. Game Over State
+
+**Game Over Condition**
+- Triggered when blob count falls below 1
+
+**Game Over Screen (Minimal)**
+- Display "Game Over" text
+- Display final score
+- Display final distance traveled
+- Simple "Click to Restart" or "Press R to Restart" instruction
+- No fancy animations or transitions required for Phase 1
 
 ### Completion Criteria for Phase 1
 - User can open the game
@@ -144,6 +166,7 @@ Establish the fundamental game loop, persistent forward motion (scrolling), cont
 - Blob count visibly increases when gates are collected
 - Score increases based on distance traveled
 - HUD displays current blob count and score
-- Game is over when blob count falls below 1
+- Game over screen appears when blob count falls below 1
+- User can restart the game from game over screen
 
 ## Phase 2: TBD
