@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Test - Task 4</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            font-family: 'Mulish', sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .info {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #aaaaaa;
+        }
+
+        #testCanvas {
+            border: 2px solid #4a4a6a;
+            background: #2d2d44;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #00ff88;
+            border: none;
+            border-radius: 4px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #00dd77;
+        }
+    </style>
+</head>
+<body>
+    <h1>Track Renderer Test - Task 4</h1>
+    <div class="info">
+        <p>Testing the Renderer and Track entities</p>
+        <p><strong>Arrow Keys:</strong> Move camera | <strong>I/K:</strong> Move camera up/down</p>
+    </div>
+
+    <canvas id="testCanvas" width="800" height="600"></canvas>
+
+    <div class="controls">
+        <button id="resetView">Reset Camera</button>
+    </div>
+
+    <script type="module">
+        import { Camera } from './rendering/Camera.js';
+        import { Renderer } from './rendering/Renderer.js';
+        import { Track } from './entities/Track.js';
+
+        const canvas = document.getElementById('testCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Create camera
+        const camera = new Camera(0, 0, -400);
+
+        // Create renderer
+        const renderer = new Renderer(ctx, camera);
+
+        // Create and add track
+        const track = new Track();
+        renderer.addEntity(track);
+
+        // Camera controls
+        const cameraSpeed = 150;
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        let lastTime = performance.now();
+
+        function update(dt) {
+            // Move camera with Arrow keys + I/K
+            if (keys['arrowup']) camera.z += cameraSpeed * dt;
+            if (keys['arrowdown']) camera.z -= cameraSpeed * dt;
+            if (keys['arrowleft']) camera.x -= cameraSpeed * dt;
+            if (keys['arrowright']) camera.x += cameraSpeed * dt;
+            if (keys['i']) camera.y += cameraSpeed * dt;
+            if (keys['k']) camera.y -= cameraSpeed * dt;
+        }
+
+        function render() {
+            const now = performance.now();
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            update(dt);
+
+            // Clear background
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Render all entities
+            renderer.render();
+
+            // Draw camera info
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Mulish';
+            ctx.fillText(`Camera: X=${camera.x.toFixed(0)} Y=${camera.y.toFixed(0)} Z=${camera.z.toFixed(0)}`, 10, 20);
+            ctx.fillText('Arrow Keys: Move Camera Forward/Back/Left/Right', 10, 40);
+            ctx.fillText('I/K: Move Camera Up/Down', 10, 60);
+
+            requestAnimationFrame(render);
+        }
+
+        document.getElementById('resetView').addEventListener('click', () => {
+            camera.setPosition(0, 0, -400);
+        });
+
+        console.log('Track test started');
+        console.log('Track entity:', track);
+        render();
+    </script>
+</body>
+</html>

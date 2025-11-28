@@ -39,7 +39,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 ---
 
-### **Task 2: Projection System with Visual Test** 🧪
+### **Task 2: Projection System with Visual Test** ✅
 
 **Files to create:**
 - `js/01C/rendering/Projection.js`
@@ -69,11 +69,11 @@ This to-do list breaks down the implementation into modular, visually testable t
 - Moving cube forward/back should scale larger/smaller with proper perspective
 - Camera should look down at road from behind/above
 
-**Status:** 🧪 Ready for Visual QA
+**Status:** ✅ Complete
 
 ---
 
-### **Task 3: Camera & Entity Base Class** 🧪
+### **Task 3: Camera & Entity Base Class** ✅
 
 **Files to create:**
 - `js/01C/rendering/Camera.js`
@@ -94,11 +94,11 @@ This to-do list breaks down the implementation into modular, visually testable t
 - Move camera position and verify cube follows correctly
 - Should maintain proper perspective as camera moves
 
-**Status:** 🧪 Ready for Visual QA
+**Status:** ✅ Complete
 
 ---
 
-### **Task 4: Renderer & Track** ⏳
+### **Task 4: Renderer & Track** ✅
 
 **Files to create:**
 - `js/01C/rendering/Renderer.js`
@@ -112,6 +112,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 - Track entity with:
   - Ground plane using projected corners
   - Lane lines at fixed x positions
+  - Distance markers every 10 meters
   - Infinite scrolling using z-offset
 
 **Visual Test:**
@@ -120,7 +121,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 - Should see 2 lane lines extending into distance
 - Perspective should be clear (lines converge toward horizon)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
 ---
 
@@ -436,8 +437,8 @@ This to-do list breaks down the implementation into modular, visually testable t
 ## Summary
 
 **Total Tasks:** 15
-**Completed:** 0
+**Completed:** 4
 **In Progress:** 0
-**Pending:** 15
+**Pending:** 11
 
 **Estimated Completion:** TBD based on development velocity
