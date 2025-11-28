@@ -15,7 +15,8 @@ Blob Army is a lane-based vertical scroller game where players control a group o
 ## Architecture & Technology Stack
 
 - **Platform**: Web browser
-- **Rendering**: 3D graphics with 45-degree camera perspective
+- **Rendering**: 3D perspective graphics with racing game camera view (similar to Mario Kart, F-Zero, Outrun)
+- **Perspective**: Camera positioned behind and above player, looking down at ~45-degree angle at the track extending into the distance
 - **Framework**: JavaScript with 3D rendering capabilities (specific library TBD based on implementation approach)
 
 ## Game Parameters
@@ -48,10 +49,12 @@ Establish the fundamental game loop, persistent forward motion (scrolling), cont
 - Obstacles are always spawned and centered directly within one of these two lanes.
 
 **Camera**
-- The camera is positioned at a 45-degree angle above and behind the player
-- This creates a 3D perspective view looking down the track
+- The camera is positioned behind and above the player, looking down at ~45-degree angle
+- Creates a racing game perspective view (like Mario Kart, F-Zero, Outrun)
+- Track extends forward into the distance with proper perspective (parallel lines converge at vanishing point)
+- Objects further away appear smaller AND higher on screen
 - The camera is fixed relative to the player (moves with the player)
-- Provides clear visibility of upcoming obstacles while maintaining 3D depth
+- Provides clear visibility of upcoming obstacles while maintaining 3D depth perception
 
 **Blob Group**
 - Rendered as a group of blobs, but the core hitbox is always in the center

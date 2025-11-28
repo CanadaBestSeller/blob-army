@@ -8,11 +8,11 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 ## Task List
 
-### ✅ = Complete | 🔄 = In Progress | ⏳ = Pending
+### ✅ = Complete | 🧪 = Ready for Visual QA | 🔄 = In Progress | ⏳ = Pending
 
 ---
 
-### **Task 1: Project Structure & Game Parameters** ⏳
+### **Task 1: Project Structure & Game Parameters** ✅
 
 **Files to create:**
 - `01C.html` - Standalone HTML wrapper
@@ -35,40 +35,45 @@ This to-do list breaks down the implementation into modular, visually testable t
 - Console log should confirm parameters are loaded
 - No errors in browser console
 
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
 ---
 
-### **Task 2: Projection System with Visual Test** ⏳
+### **Task 2: Projection System with Visual Test** 🧪
 
 **Files to create:**
 - `js/01C/rendering/Projection.js`
 - `js/01C/test-projection.html` (temporary test file)
 
 **Implementation:**
-- Implement isometric projection function:
+- Implement **racing game perspective projection** (like Mario Kart/F-Zero/Outrun):
+  - Camera looks down at ~45 degree angle
+  - Track extends forward into distance (along Z axis)
+  - Perspective projection with vanishing point
+  - Objects further away appear smaller and higher on screen
   ```javascript
   function project(x, y, z, camera) {
-    // Convert 3D world coords to 2D screen coords
-    const screenX = (x - z) * scale;
-    const screenY = (y - (x + z) / 2) * scale;
-    return {x: screenX, y: screenY, depth: z};
+    // Perspective projection for racing game view
+    // Camera looking down road at 45 degrees
   }
   ```
-- Create test page that draws 3D coordinate axes
-- Project and render a wireframe cube at various positions
+- Create test page with:
+  - Ground plane/lane extending into distance
+  - Wireframe cube that can move in 3D space
+  - Camera rotation controls to verify perspective
 
 **Visual Test:**
 - Open `test-projection.html`
-- Should see a 3D cube rendered in isometric view
-- Rotating or moving the cube should show proper perspective
-- All edges should converge correctly
+- Should see lane extending straight into distance (NOT hourglass shape)
+- Lane should converge to vanishing point on horizon
+- Moving cube forward/back should scale larger/smaller with proper perspective
+- Camera should look down at road from behind/above
 
-**Status:** ⏳ Pending
+**Status:** 🧪 Ready for Visual QA
 
 ---
 
-### **Task 3: Camera & Entity Base Class** ⏳
+### **Task 3: Camera & Entity Base Class** 🧪
 
 **Files to create:**
 - `js/01C/rendering/Camera.js`
@@ -89,7 +94,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 - Move camera position and verify cube follows correctly
 - Should maintain proper perspective as camera moves
 
-**Status:** ⏳ Pending
+**Status:** 🧪 Ready for Visual QA
 
 ---
 

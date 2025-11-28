@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - If I don't go into plan mode and I want to execute something that's not unbelievably simple like like not one single small change, make sure to push back on me if there are any clarifying questions.
 - Always stop after completing a phase of a plan to ask for approval to proceed with the next phase
-- Clarify which phase of the development plan you will be working on, if necessary.
+- Clarify which phase of the development plan + the task number you will be working on, if necessary.
+- Don't do visual testing. The user will perform visual testing.
+- When the implementation is complete, move the status to Visual QA. Don't mark it as done
 
 # This pository
 

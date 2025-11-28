@@ -1,19 +1,22 @@
-# Implementation Plan 01C: Canvas 2D with Isometric/Pseudo-3D Projection
+# Implementation Plan 01C: Canvas 2D with Racing Game Perspective Projection
 
 ## Overview
-Use vanilla HTML5 Canvas 2D API with isometric projection math to create a 3D perspective effect. No external 3D libraries - lightweight and full control.
+Use vanilla HTML5 Canvas 2D API with perspective projection math to create a racing game camera view (Mario Kart/F-Zero/Outrun style). No external 3D libraries - lightweight and full control.
 
 ## Technology Stack
 - **Rendering**: HTML5 Canvas 2D API
-- **3D Projection**: Manual isometric/perspective transformation
+- **3D Projection**: Manual perspective transformation with racing game camera
 - **Architecture**: ES6 Classes with custom 3D-to-2D projection
 
 ## Visual Approach
-- **Projection**: Isometric projection with 45-degree viewing angle
+- **Projection**: Perspective projection with racing game camera view
+- **Camera**: Positioned behind and above player, looking down at ~45-degree angle
+- **Track**: Extends forward into distance along Z-axis with vanishing point
+- **Perspective**: Objects further away appear smaller AND higher on screen
 - **Rendering**: All 3D coordinates converted to 2D screen space manually
 - **Blobs**: Circles drawn at projected positions with size scaling for depth
 - **Gates**: Rectangles drawn at projected positions
-- **Track**: Lines/rectangles drawn in perspective
+- **Track**: Lines/rectangles drawn with proper perspective convergence
 - **Depth Sorting**: Manual z-sorting for proper rendering order
 
 ## File Structure
@@ -56,14 +59,16 @@ js/01C/
 - Create `01C.html` with canvas element
 - Link to `js/01C/main.js` as module
 - Set up canvas and 2D context
-- Implement isometric projection function:
+- Implement racing game perspective projection function:
   ```javascript
   // Convert 3D world coords to 2D screen coords
+  // Racing game perspective (Mario Kart/F-Zero style)
   function project(x, y, z, camera) {
-    // Isometric projection with 45-degree angle
-    const screenX = (x - z) * scale;
-    const screenY = (y - (x + z) / 2) * scale;
-    return {x: screenX, y: screenY, depth: z};
+    // Camera looks down at 45-degree angle
+    // Track extends forward along Z-axis
+    // Perspective projection with vanishing point
+    // Objects further away appear smaller and higher on screen
+    return {x: screenX, y: screenY, depth: z, scale: perspectiveScale};
   }
   ```
 - Basic render loop with requestAnimationFrame
@@ -73,10 +78,12 @@ js/01C/
 - `js/01C/rendering/Camera.js` - Camera transformation
 
 **Details:**
-- Camera position (offset from world origin)
-- Camera follows player in x-axis
-- Fixed y and z offset for 45-degree view
-- Transform world coordinates relative to camera
+- Camera positioned behind and above player
+- Camera follows player horizontally (x-axis)
+- Camera maintains fixed distance behind player (z-axis offset)
+- Camera at elevated position (y-axis) to look down at track
+- ~45-degree viewing angle looking down the track
+- Transform world coordinates relative to camera position
 
 ### Step 3: Renderer with Depth Sorting
 **Files to create/modify:**
