@@ -8,22 +8,23 @@ import { GameParameters } from '../game/GameParameters.js';
 
 /**
  * Projects a 3D world coordinate to 2D screen space using perspective projection
- * Camera looks down the track at ~45 degree angle
+ * Camera looks down the track at configurable angle
  *
  * @param {number} x - World X coordinate (horizontal, left-right)
  * @param {number} y - World Y coordinate (vertical, up-down)
  * @param {number} z - World Z coordinate (depth, forward-back along track)
- * @param {Object} camera - Camera object with position {x, y, z}
+ * @param {Object} camera - Camera object with position {x, y, z} and optional angle
  * @returns {Object} Object with {x, y, depth, scale} screen coordinates
  */
-export function project(x, y, z, camera = { x: 0, y: 0, z: 0 }) {
+export function project(x, y, z, camera = { x: 0, y: 0, z: 0, angle: 45 }) {
     // Convert to camera-relative coordinates
     const relX = x - camera.x;
     const relY = y - camera.y;
     const relZ = z - camera.z;
 
-    // Camera angle (45 degrees looking down)
-    const cameraAngle = Math.PI / 4; // 45 degrees
+    // Camera angle (default 45 degrees looking down, can be overridden)
+    const angleDegrees = camera.angle !== undefined ? camera.angle : 45;
+    const cameraAngle = (angleDegrees * Math.PI) / 180; // Convert to radians
     const cosAngle = Math.cos(cameraAngle);
     const sinAngle = Math.sin(cameraAngle);
 

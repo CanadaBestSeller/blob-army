@@ -64,14 +64,23 @@ export class Camera {
 
     /**
      * Get camera position as an object
-     * @returns {Object} Camera position {x, y, z}
+     * @returns {Object} Camera position {x, y, z, angle}
      */
     getPosition() {
         return {
             x: this.x,
             y: this.y,
-            z: this.z
+            z: this.z,
+            angle: this.angle
         };
+    }
+
+    /**
+     * Set camera angle
+     * @param {number} angle - Camera pitch angle in degrees
+     */
+    setAngle(angle) {
+        this.angle = Math.max(1, Math.min(89, angle)); // Clamp between 1 and 89 degrees
     }
 
     /**
