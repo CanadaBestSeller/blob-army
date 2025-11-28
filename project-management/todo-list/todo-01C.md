@@ -125,10 +125,11 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 ---
 
-### **Task 5: Player Entity** ⏳
+### **Task 5: Player Entity** ✅
 
 **Files to create:**
 - `js/01C/entities/Player.js`
+- `js/01C/test-track.html` (updated)
 
 **Implementation:**
 - Player class extending Entity3D:
@@ -144,7 +145,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 - Should be rendered at correct depth (on ground plane)
 - Circle should be visible and properly sized
 
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
 ---
 
@@ -437,8 +438,8 @@ This to-do list breaks down the implementation into modular, visually testable t
 ## Summary
 
 **Total Tasks:** 15
-**Completed:** 4
+**Completed:** 5
 **In Progress:** 0
-**Pending:** 11
+**Pending:** 10
 
 **Estimated Completion:** TBD based on development velocity

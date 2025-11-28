@@ -75,8 +75,8 @@
         const canvas = document.getElementById('testCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Create camera behind the player
-        const camera = new Camera(0, -300, -200);
+        // Create camera behind the player (positive Y is now up, as expected)
+        const camera = new Camera(0, 300, -200);
 
         // Create renderer
         const renderer = new Renderer(ctx, camera);
@@ -109,14 +109,8 @@
             if (keys['k']) camera.y -= cameraSpeed * dt;
 
             // Adjust camera pitch with Q/E
-            if (keys['q']) {
-                camera.setAngle(camera.angle + cameraPitchSpeed);
-                console.log('Pitch increased to:', camera.angle);
-            }
-            if (keys['e']) {
-                camera.setAngle(camera.angle - cameraPitchSpeed);
-                console.log('Pitch decreased to:', camera.angle);
-            }
+            if (keys['q']) camera.setAngle(camera.angle + cameraPitchSpeed);
+            if (keys['e']) camera.setAngle(camera.angle - cameraPitchSpeed);
         }
 
         function render() {
@@ -145,7 +139,7 @@
         }
 
         document.getElementById('resetView').addEventListener('click', () => {
-            camera.setPosition(0, -300, -200);
+            camera.setPosition(0, 300, -200);
             camera.setAngle(45);
         });
 

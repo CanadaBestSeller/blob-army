@@ -19,7 +19,7 @@ import { GameParameters } from '../game/GameParameters.js';
 export function project(x, y, z, camera = { x: 0, y: 0, z: 0, angle: 45 }) {
     // Convert to camera-relative coordinates
     const relX = x - camera.x;
-    const relY = y - camera.y;
+    const relY = -(y - camera.y); // Invert Y so positive Y is up (more intuitive)
     const relZ = z - camera.z;
 
     // Camera angle (default 45 degrees looking down, can be overridden)
