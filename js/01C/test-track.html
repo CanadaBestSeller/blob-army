@@ -54,10 +54,10 @@
     </style>
 </head>
 <body>
-    <h1>Track & Player Test - Task 5</h1>
+    <h1>Track & Player Movement Test - Task 6</h1>
     <div class="info">
-        <p>Testing the Renderer, Track, and Player entities</p>
-        <p><strong>Arrow Keys:</strong> Move camera | <strong>I/K:</strong> Camera up/down | <strong>Q/E:</strong> Camera pitch</p>
+        <p>Testing Player movement with InputManager</p>
+        <p><strong>Arrow Keys:</strong> Move player | <strong>WASD:</strong> Camera XZ | <strong>R/F:</strong> Camera Y | <strong>T/G:</strong> Camera pitch</p>
     </div>
 
     <canvas id="testCanvas" width="800" height="600"></canvas>
@@ -71,9 +71,13 @@
         import { Renderer } from './rendering/Renderer.js';
         import { Track } from './entities/Track.js';
         import { Player } from './entities/Player.js';
+        import { InputManager } from './systems/InputManager.js';
 
         const canvas = document.getElementById('testCanvas');
         const ctx = canvas.getContext('2d');
+
+        // Create input manager
+        const inputManager = new InputManager();
 
         // Create camera behind the player (positive Y is now up, as expected)
         const camera = new Camera(0, 300, -200);
@@ -100,17 +104,23 @@
         let lastTime = performance.now();
 
         function update(dt) {
-            // Move camera with Arrow keys + I/K
-            if (keys['arrowup']) camera.z += cameraSpeed * dt;
-            if (keys['arrowdown']) camera.z -= cameraSpeed * dt;
-            if (keys['arrowleft']) camera.x -= cameraSpeed * dt;
-            if (keys['arrowright']) camera.x += cameraSpeed * dt;
-            if (keys['i']) camera.y += cameraSpeed * dt;
-            if (keys['k']) camera.y -= cameraSpeed * dt;
+            // Update player with input (uses Arrow keys via InputManager)
+            const gameState = { inputManager };
+            player.update(dt, gameState);
 
-            // Adjust camera pitch with Q/E
-            if (keys['q']) camera.setAngle(camera.angle + cameraPitchSpeed);
-            if (keys['e']) camera.setAngle(camera.angle - cameraPitchSpeed);
+            // Camera XZ movement (WASD)
+            if (keys['w']) camera.z += cameraSpeed * dt;
+            if (keys['s']) camera.z -= cameraSpeed * dt;
+            if (keys['a']) camera.x -= cameraSpeed * dt;
+            if (keys['d']) camera.x += cameraSpeed * dt;
+
+            // Camera Y movement (R/F)
+            if (keys['r']) camera.y += cameraSpeed * dt;
+            if (keys['f']) camera.y -= cameraSpeed * dt;
+
+            // Camera pitch (T/G)
+            if (keys['t']) camera.setAngle(camera.angle + cameraPitchSpeed);
+            if (keys['g']) camera.setAngle(camera.angle - cameraPitchSpeed);
         }
 
         function render() {
@@ -133,7 +143,7 @@
             ctx.fillText(`Camera: X=${camera.x.toFixed(0)} Y=${camera.y.toFixed(0)} Z=${camera.z.toFixed(0)} Pitch=${camera.angle.toFixed(1)}°`, 10, 20);
             ctx.fillText(`Player: X=${player.x.toFixed(1)} Y=${player.y.toFixed(1)} Z=${player.z.toFixed(1)}`, 10, 40);
             ctx.fillText(`Blob Count: ${player.getBlobCount()}`, 10, 60);
-            ctx.fillText('Arrow Keys: Move Camera | I/K: Up/Down | Q/E: Pitch', 10, 80);
+            ctx.fillText('Arrow Keys: Player | WASD: Cam XZ | R/F: Cam Y | T/G: Pitch', 10, 80);
 
             requestAnimationFrame(render);
         }
@@ -143,7 +153,8 @@
             camera.setAngle(45);
         });
 
-        console.log('Track & Player test started');
+        console.log('Track & Player Movement test started');
+        console.log('InputManager:', inputManager);
         console.log('Track entity:', track);
         console.log('Player entity:', player);
         console.log('Player color:', player.color);

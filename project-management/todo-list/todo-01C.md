@@ -149,10 +149,11 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 ---
 
-### **Task 6: Input & Player Movement** ⏳
+### **Task 6: Input & Player Movement** ✅
 
 **Files to create:**
 - `js/01C/systems/InputManager.js`
+- `js/01C/test-track.html` (updated)
 
 **Modifications:**
 - Update `Player.js` with movement logic
@@ -161,6 +162,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 - InputManager with:
   - Arrow key state tracking
   - Clean API for checking key states
+  - Separated controls: Arrow keys for player, WASD+R/F+T/G for camera
 - Player movement:
   - Horizontal position updates based on input
   - Movement speed from GameParameters
@@ -173,7 +175,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 - Should stop at track boundaries (not go off-screen)
 - Movement should be smooth and responsive
 
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
 ---
 
@@ -438,8 +440,8 @@ This to-do list breaks down the implementation into modular, visually testable t
 ## Summary
 
 **Total Tasks:** 15
-**Completed:** 5
+**Completed:** 6
 **In Progress:** 0
-**Pending:** 10
+**Pending:** 9
 
 **Estimated Completion:** TBD based on development velocity

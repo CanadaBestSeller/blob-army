@@ -5,6 +5,7 @@
 
 import { Entity3D } from './Entity3D.js';
 import { project } from '../rendering/Projection.js';
+import { GameParameters } from '../game/GameParameters.js';
 
 export class Player extends Entity3D {
     /**
@@ -45,12 +46,30 @@ export class Player extends Entity3D {
     }
 
     /**
-     * Update player state (no movement yet in Task 5)
+     * Update player state with movement
      * @param {number} deltaTime - Time elapsed since last frame
-     * @param {Object} gameState - Current game state
+     * @param {Object} gameState - Current game state (includes inputManager)
      */
     update(deltaTime, gameState) {
-        // No movement logic yet - Task 6 will add this
+        // Get input manager from game state
+        const input = gameState.inputManager;
+        if (!input) return;
+
+        // Calculate movement based on input
+        let moveDirection = 0;
+        if (input.isLeftPressed()) moveDirection -= 1;
+        if (input.isRightPressed()) moveDirection += 1;
+
+        // Apply movement
+        if (moveDirection !== 0) {
+            const moveSpeed = GameParameters.PLAYER_MOVEMENT_SPEED;
+            this.x += moveDirection * moveSpeed * deltaTime;
+
+            // Clamp to track boundaries
+            const minX = -GameParameters.TRACK_WIDTH / 2;
+            const maxX = GameParameters.TRACK_WIDTH / 2;
+            this.x = Math.max(minX, Math.min(maxX, this.x));
+        }
     }
 
     /**
