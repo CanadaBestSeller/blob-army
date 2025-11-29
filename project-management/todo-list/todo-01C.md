@@ -210,27 +210,37 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 ---
 
-### **Task 8: Gate Entity** ⏳
+### **Task 8: Gate Entity** 🧪
 
 **Files to create:**
 - `js/01C/entities/Gate.js`
+- `js/01C/test-gates.html`
+
+**Files modified:**
+- `js/01C/rendering/Renderer.js` - Two-pass rendering (track background, then entities)
+- `js/01C/game/Game.js` - Only move player forward, not gates
 
 **Implementation:**
 - Gate class extending Entity3D:
   - 3D position in world space
   - Store value N (number between -20 and +20)
-  - Draw as rectangle at projected position
+  - Draw as rectangle at projected position with bright colors
+  - Positive gates: bright green (#00FF00), negative: bright red (#FF0000)
+  - Thick yellow border (#FFFF00, 5px) for visibility
   - Draw text (number value) using canvas fillText
   - Scale based on depth
+- Fixed rendering layering: Two-pass system ensures gates always on top of track
+- Fixed gate movement: Gates stay at fixed Z positions, player moves forward
 
 **Visual Test:**
-- Manually spawn 2 gates at far z distance in test
-- Gates should appear as rectangles with numbers
+- Manually spawn 6 gates at far z distances (500, 1000, 1500) in test
+- Gates should appear as bright rectangles with numbers
 - Numbers should be centered on gates
 - Gates should scale smaller when further away
-- Gates should scroll toward camera with world
+- Gates should remain at fixed positions and appear to move toward camera as player advances
+- Gates should always render on top of lane lines (not obscured)
 
-**Status:** ⏳ Pending
+**Status:** 🧪 Ready for Visual QA
 
 ---
 
@@ -445,7 +455,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 **Total Tasks:** 15
 **Completed:** 7
-**In Visual QA:** 0
-**Pending:** 8
+**In Visual QA:** 1
+**Pending:** 7
 
 **Estimated Completion:** TBD based on development velocity

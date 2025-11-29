@@ -30,7 +30,7 @@ export const GameParameters = {
     // Gates
     GATE_SPAWN_INTERVAL: 2000, // milliseconds between spawns
     GATE_SPAWN_DISTANCE: 1500, // Z distance where gates spawn (far away)
-    GATE_WIDTH: 80,
+    GATE_WIDTH: 200, // width of each lane
     GATE_HEIGHT: 100,
     GATE_VALUE_MIN: -20,
     GATE_VALUE_MAX: 20,
@@ -40,9 +40,9 @@ export const GameParameters = {
     COLLISION_DISTANCE_THRESHOLD: 60, // distance for collision detection
 
     // Camera & Projection
-    CAMERA_ANGLE: 45, // degrees
-    CAMERA_HEIGHT: 300, // Y position above ground
-    CAMERA_DISTANCE: 400, // Z distance behind player
+    CAMERA_ANGLE: 15, // degrees
+    CAMERA_HEIGHT: 200, // Y position above ground
+    CAMERA_DISTANCE: 220, // Z distance behind player
     PROJECTION_SCALE: 1.0, // base scale for projection
     DEPTH_SCALE_FACTOR: 0.0005, // how much objects shrink with distance
 

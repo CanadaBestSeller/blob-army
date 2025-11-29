@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Loop & World Scrolling Test - Task 7</title>
+    <title>Gate Movement Debug Test</title>
     <style>
         body {
             margin: 0;
@@ -51,12 +51,23 @@
         button:hover {
             background: #00dd77;
         }
+
+        .debug-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-width: 800px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
-    <h1>Game Loop & World Scrolling Test - Task 7</h1>
+    <h1>Gate Movement Debug Test</h1>
     <div class="info">
-        <p>Testing automatic world scrolling with Game class</p>
+        <p>Debugging gate positioning and movement</p>
         <p><strong>Arrow Keys:</strong> Move player left/right | <strong>R/F:</strong> Camera up/down | <strong>T/G:</strong> Camera pitch</p>
     </div>
 
@@ -68,16 +79,23 @@
         <button id="resetGame">Reset</button>
     </div>
 
+    <div class="debug-info" id="debugInfo">
+        Debug info will appear here...
+    </div>
+
     <script type="module">
         import { Camera } from './rendering/Camera.js';
         import { Renderer } from './rendering/Renderer.js';
         import { Track } from './entities/Track.js';
         import { Player } from './entities/Player.js';
+        import { Gate } from './entities/Gate.js';
         import { InputManager } from './systems/InputManager.js';
         import { Game } from './game/Game.js';
+        import { GameParameters } from './game/GameParameters.js';
 
         const canvas = document.getElementById('testCanvas');
         const ctx = canvas.getContext('2d');
+        const debugDiv = document.getElementById('debugInfo');
 
         // Create input manager
         const inputManager = new InputManager();
@@ -99,9 +117,13 @@
         const player = new Player(0, 0.5, 0);
         game.addEntity(player);
 
+        // Create ONE gate close by for easy testing
+        const testGate = new Gate(0, 50, 200, 99);  // Center lane, close distance
+        game.addEntity(testGate);
+
         // Camera controls (using raw key tracking for camera, not InputManager)
-        const cameraSpeed = 400; // Increased for more responsive camera movement
-        const cameraPitchSpeed = 1.0; // Increased for faster pitch changes
+        const cameraSpeed = 400;
+        const cameraPitchSpeed = 1.0;
         const keys = {};
 
         window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
@@ -111,13 +133,8 @@
         const originalUpdate = game.update.bind(game);
         game.update = function(deltaTime) {
             // Apply camera controls BEFORE followTarget is called
-            // This way Y and pitch changes persist, while X/Z get overridden by followTarget
-
-            // Camera Y movement (R/F) - this will persist
             if (keys['r']) camera.y += cameraSpeed * deltaTime;
             if (keys['f']) camera.y -= cameraSpeed * deltaTime;
-
-            // Camera pitch (T/G) - this will persist
             if (keys['t']) camera.setAngle(camera.angle + cameraPitchSpeed);
             if (keys['g']) camera.setAngle(camera.angle - cameraPitchSpeed);
 
@@ -125,42 +142,81 @@
             originalUpdate(deltaTime);
         };
 
-        // Override the game's render to include HUD
+        // Override the game's render to include HUD and debug info
         const originalRender = game.render.bind(game);
         game.render = function() {
             // Call original render
             originalRender();
 
             // Draw HUD
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(5, 5, 280, 88);
+
+            ctx.fillStyle = '#00ff88';
+            ctx.font = 'bold 11px Mulish';
+            ctx.fillText('REAL-TIME DEBUG', 10, 18);
+
             ctx.fillStyle = '#fff';
-            ctx.font = '14px Mulish';
-            ctx.fillText(`Camera: X=${camera.x.toFixed(0)} Y=${camera.y.toFixed(0)} Z=${camera.z.toFixed(0)} Pitch=${camera.angle.toFixed(1)}°`, 10, 20);
-            ctx.fillText(`Player: X=${player.x.toFixed(1)} Y=${player.y.toFixed(1)} Z=${player.z.toFixed(1)}`, 10, 40);
-            ctx.fillText(`Distance: ${game.getDistanceInMeters().toFixed(1)} m`, 10, 60);
-            ctx.fillText(`Blob Count: ${player.getBlobCount()}`, 10, 80);
-            ctx.fillText('Arrow Keys: Player L/R | R/F: Cam Y | T/G: Pitch', 10, 100);
+            ctx.font = '10px Mulish';
+            ctx.fillText(`Player Z: ${player.z.toFixed(1)}`, 10, 34);
+            ctx.fillText(`Camera Z: ${camera.z.toFixed(1)}`, 10, 47);
+            ctx.fillText(`Gate Z: ${testGate.z.toFixed(1)}`, 10, 60);
+            ctx.fillText(`Distance: ${(testGate.z - player.z).toFixed(1)}`, 10, 73);
+            ctx.fillText(`Angle: ${camera.angle.toFixed(1)}° Y: ${camera.y.toFixed(0)}`, 10, 86);
+            ctx.restore();
+
+            // Update debug div
+            debugDiv.innerHTML = `
+                <strong>Position Data:</strong><br>
+                Player Position: (${player.x.toFixed(1)}, ${player.y.toFixed(1)}, ${player.z.toFixed(1)})<br>
+                Camera Position: (${camera.x.toFixed(1)}, ${camera.y.toFixed(1)}, ${camera.z.toFixed(1)})<br>
+                Gate Position: (${testGate.x.toFixed(1)}, ${testGate.y.toFixed(1)}, ${testGate.z.toFixed(1)})<br>
+                <br>
+                <strong>Relative Distances:</strong><br>
+                Player to Gate: ${(testGate.z - player.z).toFixed(1)} units<br>
+                Camera to Gate: ${(testGate.z - camera.z).toFixed(1)} units<br>
+                Camera to Player: ${(player.z - camera.z).toFixed(1)} units (should be ~400)<br>
+                <br>
+                <strong>Movement Rate:</strong><br>
+                World Scroll Speed: ${GameParameters.WORLD_SCROLL_SPEED} units/sec<br>
+                Distance Traveled: ${game.getDistanceTraveled().toFixed(1)} units<br>
+                <br>
+                <strong>Expected Behavior:</strong><br>
+                ✓ Player Z should increase over time<br>
+                ✓ Camera Z should follow player (player.z - 400)<br>
+                ✓ Gate Z should remain FIXED at 200<br>
+                ✓ Distance to gate should DECREASE over time<br>
+                ✓ Gate should get LARGER on screen over time
+            `;
         };
 
         // Button handlers
         document.getElementById('startGame').addEventListener('click', () => {
             game.start();
-            console.log('Game started via button');
+            console.log('Game started');
+            console.log('Initial Player Z:', player.z);
+            console.log('Initial Camera Z:', camera.z);
+            console.log('Initial Gate Z:', testGate.z);
         });
 
         document.getElementById('stopGame').addEventListener('click', () => {
             game.stop();
-            console.log('Game stopped via button');
+            console.log('Game stopped');
         });
 
         document.getElementById('resetGame').addEventListener('click', () => {
             game.reset();
             player.setPosition(0, 0.5, 0);
+            testGate.setPosition(0, 50, 200);
             console.log('Game reset');
         });
 
-        console.log('Game Loop test initialized');
-        console.log('Game:', game);
-        console.log('Click "Start Game" to begin');
+        console.log('=== GATE MOVEMENT DEBUG TEST ===');
+        console.log('This test verifies that gates stay fixed while player moves forward');
+        console.log('Watch the debug panel - Distance to Gate should DECREASE over time');
+        console.log('Gate Z should REMAIN at 200');
+        console.log('Player Z should INCREASE continuously');
     </script>
 </body>
 </html>

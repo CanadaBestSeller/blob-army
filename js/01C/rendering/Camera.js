@@ -12,7 +12,7 @@ export class Camera {
      * @param {number} y - Initial Y position
      * @param {number} z - Initial Z position
      */
-    constructor(x = 0, y = GameParameters.CAMERA_HEIGHT, z = 0) {
+    constructor(x = 0, y = GameParameters.CAMERA_HEIGHT, z = -GameParameters.CAMERA_DISTANCE) {
         this.x = x;
         this.y = y;
         this.z = z;

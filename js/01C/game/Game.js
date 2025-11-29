@@ -114,19 +114,21 @@ export class Game {
             scrollSpeed: scrollSpeed
         };
 
-        // Update all entities (this moves player forward)
-        this.entities.forEach(entity => {
-            // Move entity forward with world scrolling
-            entity.z += scrollSpeed * deltaTime;
+        // Move player forward (not gates or track - they stay fixed in world space)
+        const player = this.entities.find(e => e.constructor.name === 'Player');
+        if (player) {
+            player.z += scrollSpeed * deltaTime;
+        }
 
+        // Update all entities
+        this.entities.forEach(entity => {
             // Call entity's update method
             if (entity.update) {
                 entity.update(deltaTime, gameState);
             }
         });
 
-        // Find player and make camera follow
-        const player = this.entities.find(e => e.constructor.name === 'Player');
+        // Make camera follow player
         if (player && this.camera.followTarget) {
             this.camera.followTarget(player);
         }

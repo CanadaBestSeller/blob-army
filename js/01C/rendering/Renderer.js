@@ -45,7 +45,7 @@ export class Renderer {
 
     /**
      * Render all entities with depth sorting
-     * Objects further away (larger Z) are drawn first
+     * Two-pass rendering system ensures gates always appear above track
      */
     render() {
         // Clear canvas
@@ -54,17 +54,34 @@ export class Renderer {
         // Remove entities marked for deletion
         this.entities = this.entities.filter(entity => !entity.shouldDelete());
 
-        // Sort entities by depth (furthest first for painter's algorithm)
-        const sorted = [...this.entities].sort((a, b) => {
-            // Calculate camera-relative Z position
-            const aDepth = a.z - this.camera.z;
-            const bDepth = b.z - this.camera.z;
-            return bDepth - aDepth; // Furthest first
+        // PASS 1: Draw track first (absolute background, always drawn first)
+        const track = this.entities.find(e => e.constructor.name === 'Track');
+        const center = { x: this.ctx.canvas.width / 2, y: this.ctx.canvas.height / 2 };
+
+        if (track) {
+            // Track elements are drawn in fixed order as absolute background
+            if (track.drawGroundPlane) track.drawGroundPlane(this.ctx, this.camera, center);
+            if (track.drawDistanceMarkers) track.drawDistanceMarkers(this.ctx, this.camera, center);
+            if (track.drawLaneLines) track.drawLaneLines(this.ctx, this.camera, center);
+            // console.log('PASS 1: Drew track (background)');
+        }
+
+        // PASS 2: Draw all non-track entities (gates, player) with depth sorting
+        // These are ALWAYS drawn after the track, ensuring they appear on top
+        const gameEntities = this.entities.filter(e => e.constructor.name !== 'Track');
+
+        // Sort by depth - FURTHEST objects drawn FIRST, CLOSEST objects drawn LAST
+        // This ensures closer objects appear on top of further objects
+        gameEntities.sort((a, b) => {
+            // Objects with larger Z (further away) should be drawn first
+            // Objects with smaller Z (closer) should be drawn last (on top)
+            return b.z - a.z; // Sort by Z descending (furthest to closest)
         });
 
-        // Draw each entity in order
-        sorted.forEach(entity => {
+        // Draw all game entities - closer objects will appear on top of further ones
+        gameEntities.forEach(entity => {
             entity.draw(this.ctx, this.camera);
+            // console.log(`PASS 2: Drew ${entity.constructor.name} at Z=${entity.z.toFixed(0)}`);
         });
     }
 

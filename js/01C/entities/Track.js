@@ -108,11 +108,6 @@ export class Track extends Entity3D {
         ctx.lineTo(center.x + projected[3].x, center.y - projected[3].y);
         ctx.closePath();
         ctx.fill();
-
-        // Draw ground plane border
-        ctx.strokeStyle = GameParameters.COLOR_LANE_LINE;
-        ctx.lineWidth = 2;
-        ctx.stroke();
     }
 
     /**
@@ -132,23 +127,44 @@ export class Track extends Entity3D {
         const endZ = cameraZ + 5000;
 
         for (let z = startZ; z <= endZ; z += markerInterval) {
-            // Horizontal line across the entire track width
-            const leftPoint = { x: -halfWidth, y: 0, z: z };
-            const rightPoint = { x: halfWidth, y: 0, z: z };
+            // Get marker settings from global (if available)
+            const markerSettings = window.MARKER_SETTINGS || { color: '#BB00FF', width: 1, glow: 8, infinite: true };
+
+            // Determine horizontal line width (infinite or track width)
+            let leftX, rightX;
+            if (markerSettings.infinite) {
+                // Extend far beyond the track
+                leftX = -10000;
+                rightX = 10000;
+            } else {
+                // Stay within track width
+                leftX = -halfWidth;
+                rightX = halfWidth;
+            }
+
+            // Horizontal line across the width
+            const leftPoint = { x: leftX, y: 0, z: z };
+            const rightPoint = { x: rightX, y: 0, z: z };
 
             // Project points
             const leftProj = project(leftPoint.x, leftPoint.y, leftPoint.z, camPos);
             const rightProj = project(rightPoint.x, rightPoint.y, rightPoint.z, camPos);
 
-            // Draw faint horizontal line
-            ctx.strokeStyle = 'rgba(74, 74, 106, 0.4)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([5, 5]);
+            // Draw prominent horizontal line with optional glow
+            if (markerSettings.glow > 0) {
+                ctx.shadowColor = markerSettings.color;
+                ctx.shadowBlur = markerSettings.glow;
+            }
+            ctx.strokeStyle = markerSettings.color;
+            ctx.lineWidth = markerSettings.width;
+            ctx.setLineDash([]);
             ctx.beginPath();
             ctx.moveTo(center.x + leftProj.x, center.y - leftProj.y);
             ctx.lineTo(center.x + rightProj.x, center.y - rightProj.y);
             ctx.stroke();
-            ctx.setLineDash([]);
+
+            // Reset shadow
+            ctx.shadowBlur = 0;
         }
     }
 
@@ -159,38 +175,27 @@ export class Track extends Entity3D {
      * @param {Object} center - Canvas center point
      */
     drawLaneLines(ctx, camera, center) {
-        // Draw a line for each lane position except the edges
-        const laneLinePositions = [];
-
-        // Add center line between the two lanes
-        if (this.laneCount === 2) {
-            laneLinePositions.push(0); // Center line
-        }
-
         const camPos = camera.getPosition();
         const cameraZ = camPos.z;
+        const nearZ = cameraZ - 500;
+        const farZ = cameraZ + 5000;
 
-        laneLinePositions.forEach(xPos => {
-            // Define line from near to far, relative to camera
-            const nearZ = cameraZ - 500;
-            const farZ = cameraZ + 5000;
+        // Draw center line between the two lanes
+        const centerLineX = 0;
+        const nearPoint = { x: centerLineX, y: 0, z: nearZ };
+        const farPoint = { x: centerLineX, y: 0, z: farZ };
 
-            const nearPoint = { x: xPos, y: 0, z: nearZ };
-            const farPoint = { x: xPos, y: 0, z: farZ };
+        const nearProj = project(nearPoint.x, nearPoint.y, nearPoint.z, camPos);
+        const farProj = project(farPoint.x, farPoint.y, farPoint.z, camPos);
 
-            // Project to screen space
-            const nearProj = project(nearPoint.x, nearPoint.y, nearPoint.z, camPos);
-            const farProj = project(farPoint.x, farPoint.y, farPoint.z, camPos);
-
-            // Draw lane line
-            ctx.strokeStyle = GameParameters.COLOR_LANE_LINE;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([10, 10]);
-            ctx.beginPath();
-            ctx.moveTo(center.x + nearProj.x, center.y - nearProj.y);
-            ctx.lineTo(center.x + farProj.x, center.y - farProj.y);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        });
+        // Draw lane line
+        ctx.strokeStyle = GameParameters.COLOR_LANE_LINE;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 10]);
+        ctx.beginPath();
+        ctx.moveTo(center.x + nearProj.x, center.y - nearProj.y);
+        ctx.lineTo(center.x + farProj.x, center.y - farProj.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
     }
 }

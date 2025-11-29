@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gate Entity Test - Task 8</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            font-family: 'Mulish', sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .info {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #aaaaaa;
+        }
+
+        #testCanvas {
+            border: 2px solid #4a4a6a;
+            background: #2d2d44;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #00ff88;
+            border: none;
+            border-radius: 4px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #00dd77;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gate Entity Test - Task 8</h1>
+    <div class="info">
+        <p>Testing gate rendering with world scrolling</p>
+        <p><strong>Arrow Keys:</strong> Move player left/right | <strong>R/F:</strong> Camera up/down | <strong>T/G:</strong> Camera pitch</p>
+    </div>
+
+    <canvas id="testCanvas" width="800" height="600"></canvas>
+
+    <div class="controls">
+        <button id="startGame">Start Game</button>
+        <button id="stopGame">Stop Game</button>
+        <button id="resetGame">Reset</button>
+    </div>
+
+    <div class="controls" style="margin-top: 20px; flex-direction: column; align-items: flex-start;">
+        <h3 style="margin: 0 0 10px 0;">Gate Color</h3>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <label>
+                Color: <input type="color" id="gateColor" value="#ffff00">
+            </label>
+            <label>
+                Opacity: <input type="range" id="gateOpacity" min="0" max="100" value="25" style="width: 150px;">
+                <span id="opacityValue">25%</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="controls" style="margin-top: 20px; flex-direction: column; align-items: flex-start;">
+        <h3 style="margin: 0 0 10px 0;">Horizontal Markers</h3>
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <label>
+                Color: <input type="color" id="markerColor" value="#BB00FF">
+            </label>
+            <label>
+                Width: <input type="range" id="markerWidth" min="1" max="10" value="1" style="width: 150px;">
+                <span id="markerWidthValue">1px</span>
+            </label>
+            <label>
+                Glow: <input type="range" id="markerGlow" min="0" max="30" value="8" style="width: 150px;">
+                <span id="markerGlowValue">8px</span>
+            </label>
+            <label>
+                <input type="checkbox" id="markerInfinite" checked>
+                Infinite Width
+            </label>
+        </div>
+    </div>
+
+    <script type="module">
+        import { Camera } from './rendering/Camera.js';
+        import { Renderer } from './rendering/Renderer.js';
+        import { Track } from './entities/Track.js';
+        import { Player } from './entities/Player.js';
+        import { Gate } from './entities/Gate.js';
+        import { InputManager } from './systems/InputManager.js';
+        import { Game } from './game/Game.js';
+        import { GameParameters } from './game/GameParameters.js';
+        import { project } from './rendering/Projection.js';
+
+        const canvas = document.getElementById('testCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Create input manager
+        const inputManager = new InputManager();
+
+        // Create camera behind the player (uses GameParameters defaults)
+        const camera = new Camera();
+
+        // Create renderer
+        const renderer = new Renderer(ctx, camera);
+
+        // Create game instance
+        const game = new Game(ctx, renderer, camera, inputManager);
+
+        // Create and add track
+        const track = new Track();
+        game.addEntity(track);
+
+        // Create and add player at origin
+        const player = new Player(0, 0.5, 0);
+        game.addEntity(player);
+
+        // Manually spawn test gates at different distances
+        // Lane positions: left = -100, right = +100
+
+        // Gates at near distance (z = 500)
+        const gate1 = new Gate(-100, 50, 500, 15);  // Left lane, positive
+        const gate2 = new Gate(100, 50, 500, -10);  // Right lane, negative
+        game.addEntity(gate1);
+        game.addEntity(gate2);
+
+        // Gates at medium distance (z = 1000)
+        const gate3 = new Gate(-100, 50, 1000, -5);  // Left lane, negative
+        const gate4 = new Gate(100, 50, 1000, 20);   // Right lane, positive
+        game.addEntity(gate3);
+        game.addEntity(gate4);
+
+        // Gates at far distance (z = 1500)
+        const gate5 = new Gate(-100, 50, 1500, 8);   // Left lane, positive
+        const gate6 = new Gate(100, 50, 1500, -15);  // Right lane, negative
+        game.addEntity(gate5);
+        game.addEntity(gate6);
+
+        // Camera controls (using raw key tracking for camera, not InputManager)
+        const cameraSpeed = 400;
+        const cameraPitchSpeed = 1.0;
+        const cameraDistanceSpeed = 200;
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        // Separate camera control and render loop that runs independently of game
+        let lastCameraUpdateTime = performance.now();
+        function updateCameraControls() {
+            const currentTime = performance.now();
+            const deltaTime = (currentTime - lastCameraUpdateTime) / 1000;
+            lastCameraUpdateTime = currentTime;
+
+            // Apply camera controls
+            if (keys['r']) camera.y += cameraSpeed * deltaTime;
+            if (keys['f']) camera.y -= cameraSpeed * deltaTime;
+            if (keys['t']) camera.setAngle(camera.angle + cameraPitchSpeed);
+            if (keys['g']) camera.setAngle(camera.angle - cameraPitchSpeed);
+            if (keys['w']) {
+                camera.distance -= cameraDistanceSpeed * deltaTime;
+                // Update camera Z position immediately when stopped
+                if (!game.isRunning) {
+                    camera.z = player.z - camera.distance;
+                }
+            }
+            if (keys['s']) {
+                camera.distance += cameraDistanceSpeed * deltaTime;
+                // Update camera Z position immediately when stopped
+                if (!game.isRunning) {
+                    camera.z = player.z - camera.distance;
+                }
+            }
+
+            // If game is not running, manually render the scene
+            if (!game.isRunning) {
+                game.render();
+            }
+
+            requestAnimationFrame(updateCameraControls);
+        }
+        updateCameraControls(); // Start the camera control loop
+
+        // Override the game's update to include camera controls
+        const originalUpdate = game.update.bind(game);
+        game.update = function(deltaTime) {
+            // Call original update (this calls followTarget which sets X and Z)
+            originalUpdate(deltaTime);
+        };
+
+        // Override the game's render to include HUD
+        const originalRender = game.render.bind(game);
+        game.render = function() {
+            // Call original render
+            originalRender();
+
+            // Draw HUD - ensure it's within canvas bounds
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(15, 15, 340, 130);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Mulish, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            const hudX = 25;
+            const hudY = 25;
+            const lineHeight = 16;
+
+            ctx.fillText(`Camera: X=${camera.x.toFixed(0)} Y=${camera.y.toFixed(0)} Z=${camera.z.toFixed(0)} Pitch=${camera.angle.toFixed(1)}° Dist=${camera.distance.toFixed(0)}`, hudX, hudY);
+            ctx.fillText(`Player: X=${player.x.toFixed(1)} Y=${player.y.toFixed(1)} Z=${player.z.toFixed(1)}`, hudX, hudY + lineHeight);
+            ctx.fillText(`Distance: ${game.getDistanceInMeters().toFixed(1)} m`, hudX, hudY + lineHeight * 2);
+            ctx.fillText(`Blob Count: ${player.getBlobCount()}`, hudX, hudY + lineHeight * 3);
+            ctx.fillText('Gates at Z: 500, 1000, 1500', hudX, hudY + lineHeight * 4.5);
+            ctx.restore();
+        };
+
+        // Button handlers
+        document.getElementById('startGame').addEventListener('click', () => {
+            game.start();
+            console.log('Game started via button');
+        });
+
+        document.getElementById('stopGame').addEventListener('click', () => {
+            game.stop();
+            console.log('Game stopped via button');
+        });
+
+        document.getElementById('resetGame').addEventListener('click', () => {
+            game.reset();
+            player.setPosition(0, 0.5, 0);
+
+            // Reset gates to original positions
+            gate1.setPosition(-100, 50, 500);
+            gate2.setPosition(100, 50, 500);
+            gate3.setPosition(-100, 50, 1000);
+            gate4.setPosition(100, 50, 1000);
+            gate5.setPosition(-100, 50, 1500);
+            gate6.setPosition(100, 50, 1500);
+
+            console.log('Game reset');
+        });
+
+        // Initialize gate color with oscillation
+        window.GATE_COLOR = { r: 255, g: 255, b: 0, a: 0.35, baseOpacity: 0.35, oscillate: true };
+
+        // Initialize marker settings
+        window.MARKER_SETTINGS = { color: '#BB00FF', width: 1, glow: 8, infinite: true };
+
+        // Oscillation animation
+        let oscillationStartTime = performance.now();
+        function updateGateOpacity() {
+            if (window.GATE_COLOR.oscillate) {
+                const elapsed = (performance.now() - oscillationStartTime) / 1000;
+                const oscillation = Math.sin(elapsed * 4) * 0.5 + 0.5; // Oscillates between 0 and 1, faster (4 Hz)
+                window.GATE_COLOR.a = 0.2 + (oscillation * 0.3); // Oscillates between 20% and 50%
+            }
+            requestAnimationFrame(updateGateOpacity);
+        }
+        updateGateOpacity();
+
+        // Color picker handlers
+        document.getElementById('gateColor').addEventListener('input', (e) => {
+            const hex = e.target.value;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            window.GATE_COLOR.r = r;
+            window.GATE_COLOR.g = g;
+            window.GATE_COLOR.b = b;
+
+            // Trigger re-render if game is stopped
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('gateOpacity').addEventListener('input', (e) => {
+            const opacity = parseInt(e.target.value) / 100;
+            window.GATE_COLOR.baseOpacity = opacity;
+            window.GATE_COLOR.a = opacity;
+            window.GATE_COLOR.oscillate = false; // Disable oscillation when manually adjusted
+            document.getElementById('opacityValue').textContent = e.target.value + '%';
+
+            // Trigger re-render if game is stopped
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        // Marker controls
+        document.getElementById('markerColor').addEventListener('input', (e) => {
+            window.MARKER_SETTINGS.color = e.target.value;
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('markerWidth').addEventListener('input', (e) => {
+            window.MARKER_SETTINGS.width = parseInt(e.target.value);
+            document.getElementById('markerWidthValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('markerGlow').addEventListener('input', (e) => {
+            window.MARKER_SETTINGS.glow = parseInt(e.target.value);
+            document.getElementById('markerGlowValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('markerInfinite').addEventListener('change', (e) => {
+            window.MARKER_SETTINGS.infinite = e.target.checked;
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        console.log('Gate test initialized');
+        console.log('6 gates spawned at 3 distances');
+        console.log('Click "Start Game" to begin');
+    </script>
+</body>
+</html>
