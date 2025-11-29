@@ -92,12 +92,15 @@ export class Gate extends Entity3D {
         ctx.fill();
 
         // Draw only bottom border
+        ctx.save();
         ctx.strokeStyle = `rgba(${gateColor.r}, ${gateColor.g}, ${gateColor.b}, ${gateColor.a})`;
         ctx.lineWidth = 3;
+        ctx.setLineDash([]); // Ensure solid line for gate border
         ctx.beginPath();
         ctx.moveTo(center.x + projected[0].x, center.y - projected[0].y);
         ctx.lineTo(center.x + projected[1].x, center.y - projected[1].y);
         ctx.stroke();
+        ctx.restore();
 
         // Draw value text in center of gate (vertically centered at height/2)
         const gateCenter = project(this.x, this.height / 2, this.z, camPos);

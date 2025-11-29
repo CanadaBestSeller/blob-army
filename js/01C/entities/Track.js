@@ -37,6 +37,7 @@ export class Track extends Entity3D {
         };
 
         this.drawDistanceMarkers(ctx, camera, center);
+        this.drawZAxisMarker(ctx, camera, center);
     }
 
     /**
@@ -87,5 +88,57 @@ export class Track extends Entity3D {
             // Reset shadow
             ctx.shadowBlur = 0;
         }
+    }
+
+    /**
+     * Draw continuous z-axis marker down the center
+     * @param {CanvasRenderingContext2D} ctx - Canvas context
+     * @param {Camera} camera - Camera object
+     * @param {Object} center - Canvas center point
+     */
+    drawZAxisMarker(ctx, camera, center) {
+        const zMarkerSettings = window.Z_MARKER_SETTINGS || { color: '#BB00FF', width: 2, glow: 8 };
+        const camPos = camera.getPosition();
+
+        // Draw z-axis markers at x = -200, 0, and 200
+        const xPositions = [-200, 0, 200];
+
+        // Start a bit ahead of the camera to ensure it's visible
+        const startZ = camPos.z + 50;
+        const endZ = camPos.z + 5000; // Extend 5000 units into the distance
+
+        ctx.save();
+
+        // Apply glow effect
+        if (zMarkerSettings.glow > 0) {
+            ctx.shadowColor = zMarkerSettings.color;
+            ctx.shadowBlur = zMarkerSettings.glow;
+        }
+
+        ctx.strokeStyle = zMarkerSettings.color;
+        ctx.lineWidth = zMarkerSettings.width;
+        ctx.setLineDash([]); // Solid line
+        ctx.lineCap = 'round';
+
+        // Draw a line for each x position
+        for (const x of xPositions) {
+            const startPoint = project(x, 0, startZ, camPos);
+            const endPoint = project(x, 0, endZ, camPos);
+
+            const startX = center.x + startPoint.x;
+            const startY = center.y - startPoint.y;
+            const endX = center.x + endPoint.x;
+            const endY = center.y - endPoint.y;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+        }
+
+        // Reset shadow
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
     }
 }

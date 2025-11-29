@@ -177,6 +177,23 @@
         </div>
 
         <div class="control-section">
+            <h3>Z-Axis Marker (Vertical)</h3>
+            <div class="control-group">
+                <label>
+                    Color: <input type="color" id="zMarkerColor" value="#BB00FF">
+                </label>
+                <label>
+                    Width: <input type="range" id="zMarkerWidth" min="1" max="10" value="2" style="width: 120px;">
+                    <span id="zMarkerWidthValue">2px</span>
+                </label>
+                <label>
+                    Glow: <input type="range" id="zMarkerGlow" min="0" max="30" value="8" style="width: 120px;">
+                    <span id="zMarkerGlowValue">8px</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section">
             <h3>Wallpaper (Stars)</h3>
             <div class="control-group">
                 <label>
@@ -383,6 +400,9 @@
         // Initialize marker settings
         window.MARKER_SETTINGS = { color: '#BB00FF', width: 1, glow: 8, infinite: true };
 
+        // Initialize Z-axis marker settings
+        window.Z_MARKER_SETTINGS = { color: '#BB00FF', width: 2, glow: 8 };
+
         // Oscillation animation
         let oscillationStartTime = performance.now();
         function updateGateOpacity() {
@@ -460,6 +480,30 @@
             const glowValue = parseInt(e.target.value);
             wallpaper.setGlowIntensity(glowValue);
             document.getElementById('starGlowValue').textContent = glowValue + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        // Z-axis marker controls
+        document.getElementById('zMarkerColor').addEventListener('input', (e) => {
+            window.Z_MARKER_SETTINGS.color = e.target.value;
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('zMarkerWidth').addEventListener('input', (e) => {
+            window.Z_MARKER_SETTINGS.width = parseInt(e.target.value);
+            document.getElementById('zMarkerWidthValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('zMarkerGlow').addEventListener('input', (e) => {
+            window.Z_MARKER_SETTINGS.glow = parseInt(e.target.value);
+            document.getElementById('zMarkerGlowValue').textContent = e.target.value + 'px';
             if (!game.isRunning) {
                 game.render();
             }
