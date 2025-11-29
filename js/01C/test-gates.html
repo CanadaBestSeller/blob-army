@@ -202,6 +202,23 @@
                 </label>
             </div>
         </div>
+
+        <div class="control-section">
+            <h3>Horizon Debug Line</h3>
+            <div class="control-group">
+                <label>
+                    Color: <input type="color" id="horizonColor" value="#00ff00">
+                </label>
+                <label>
+                    Width: <input type="range" id="horizonWidth" min="1" max="10" value="2" style="width: 120px;">
+                    <span id="horizonWidthValue">2px</span>
+                </label>
+                <label>
+                    Glow: <input type="range" id="horizonGlow" min="0" max="30" value="0" style="width: 120px;">
+                    <span id="horizonGlowValue">0px</span>
+                </label>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -350,7 +367,7 @@
             // Draw HUD - ensure it's within canvas bounds
             ctx.save();
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(15, 15, 340, 130);
+            ctx.fillRect(15, 15, 340, 160);
 
             ctx.fillStyle = '#fff';
             ctx.font = '14px Mulish, sans-serif';
@@ -365,7 +382,35 @@
             ctx.fillText(`Distance: ${game.getDistanceInMeters().toFixed(1)} m`, hudX, hudY + lineHeight * 2);
             ctx.fillText(`Blob Count: ${player.getBlobCount()}`, hudX, hudY + lineHeight * 3);
             ctx.fillText('Gates at Z: 500, 1000, 1500', hudX, hudY + lineHeight * 4.5);
+
+            // Display horizon debug info
+            if (wallpaper.debugInfo) {
+                const d = wallpaper.debugInfo;
+                ctx.fillText(`Horizon: Y=${d.horizonScreenY.toFixed(1)} (Camera Y=${d.cameraY.toFixed(1)}) Canvas H=${d.canvasHeight}`, hudX, hudY + lineHeight * 6);
+            }
+
             ctx.restore();
+
+            // DEBUG: Draw horizon cutoff line (drawn last so it appears on top)
+            if (wallpaper.debugInfo) {
+                const horizonSettings = window.HORIZON_LINE_SETTINGS || { color: '#00ff00', width: 2, glow: 0 };
+                ctx.save();
+
+                // Apply glow if specified
+                if (horizonSettings.glow > 0) {
+                    ctx.shadowBlur = horizonSettings.glow;
+                    ctx.shadowColor = horizonSettings.color;
+                }
+
+                ctx.strokeStyle = horizonSettings.color;
+                ctx.lineWidth = horizonSettings.width;
+                ctx.globalAlpha = 0.7;
+                ctx.beginPath();
+                ctx.moveTo(0, wallpaper.debugInfo.horizonScreenY);
+                ctx.lineTo(ctx.canvas.width, wallpaper.debugInfo.horizonScreenY);
+                ctx.stroke();
+                ctx.restore();
+            }
         };
 
         // Button handlers
@@ -402,6 +447,9 @@
 
         // Initialize Z-axis marker settings
         window.Z_MARKER_SETTINGS = { color: '#BB00FF', width: 2, glow: 8 };
+
+        // Initialize horizon debug line settings
+        window.HORIZON_LINE_SETTINGS = { color: '#00ff00', width: 2, glow: 0 };
 
         // Oscillation animation
         let oscillationStartTime = performance.now();
@@ -504,6 +552,30 @@
         document.getElementById('zMarkerGlow').addEventListener('input', (e) => {
             window.Z_MARKER_SETTINGS.glow = parseInt(e.target.value);
             document.getElementById('zMarkerGlowValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        // Horizon debug line controls
+        document.getElementById('horizonColor').addEventListener('input', (e) => {
+            window.HORIZON_LINE_SETTINGS.color = e.target.value;
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('horizonWidth').addEventListener('input', (e) => {
+            window.HORIZON_LINE_SETTINGS.width = parseInt(e.target.value);
+            document.getElementById('horizonWidthValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('horizonGlow').addEventListener('input', (e) => {
+            window.HORIZON_LINE_SETTINGS.glow = parseInt(e.target.value);
+            document.getElementById('horizonGlowValue').textContent = e.target.value + 'px';
             if (!game.isRunning) {
                 game.render();
             }

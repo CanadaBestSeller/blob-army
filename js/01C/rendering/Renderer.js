@@ -60,7 +60,7 @@ export class Renderer {
 
         // PASS 0: Draw wallpaper (absolute background)
         if (this.wallpaper) {
-            this.wallpaper.draw(this.ctx);
+            this.wallpaper.draw(this.ctx, this.camera);
         }
 
         // Remove entities marked for deletion

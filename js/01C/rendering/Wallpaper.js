@@ -85,13 +85,63 @@ export class Wallpaper {
     /**
      * Draw the wallpaper
      * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
+     * @param {Camera} camera - Camera object (optional, used to calculate horizon)
      */
-    draw(ctx) {
+    draw(ctx, camera = null) {
         // Save context state
         ctx.save();
 
-        // Draw each star
+        // Calculate where the farthest visible horizontal marker appears on screen
+        let cutoffY = ctx.canvas.height; // Default to bottom of screen
+        if (camera) {
+            const camPos = camera.getPosition();
+            const angleDegrees = camera.angle !== undefined ? camera.angle : 45;
+            const cameraAngle = (angleDegrees * Math.PI) / 180;
+
+            // Match Track.js logic: farthest marker is at camera.z + 5000
+            const farthestZ = camPos.z + 5000;
+
+            // The horizontal marker is at Y=0 (ground level) at this Z position
+            // Calculate where this point projects to on screen
+            const worldY = 0; // Horizontal markers are at Y=0
+
+            const relY = -(worldY - camPos.y); // Camera-relative Y
+            const relZ = farthestZ - camPos.z; // Camera-relative Z
+
+            // Apply camera rotation (same as project() function)
+            const rotatedY = relY * Math.cos(cameraAngle) - relZ * Math.sin(cameraAngle);
+            const rotatedZ = relY * Math.sin(cameraAngle) + relZ * Math.cos(cameraAngle);
+
+            // Perspective projection (same as project() function)
+            const perspectiveDistance = 400;
+            const scale = perspectiveDistance / Math.max(rotatedZ, 1);
+            const screenY = -rotatedY * scale;
+
+            // Convert to absolute screen coordinates (center of canvas)
+            // This matches how Track.js draws: center.y - projectedY
+            // So we want: center.y - screenY, which is the same as center.y + (-screenY)
+            // But project() returns screenY with the negation already applied
+            // So the final screen position is: center.y - screenY (as in Track.js line 84)
+            cutoffY = ctx.canvas.height / 2 - screenY;
+
+            // Store debug info for HUD display
+            this.debugInfo = {
+                cameraY: camPos.y,
+                cameraAngle: angleDegrees,
+                horizonScreenY: cutoffY,
+                farthestMarkerZ: farthestZ,
+                canvasHeight: ctx.canvas.height
+            };
+        }
+
+        // Draw each star, but only if it's above the cutoff line
+        // In screen space, "above" means smaller Y values (Y increases downward)
         this.stars.forEach(star => {
+            // Skip stars at or below the cutoff
+            if (camera && star.y >= cutoffY) {
+                return; // Skip this star
+            }
+
             ctx.beginPath();
 
             // Apply glow effect
