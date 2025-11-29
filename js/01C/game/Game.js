@@ -143,9 +143,8 @@ export class Game {
      * Render the game
      */
     render() {
-        // Clear the canvas
-        this.ctx.fillStyle = GameParameters.COLOR_BACKGROUND;
-        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        // Renderer handles clearing and background (wallpaper)
+        // No need to fill with COLOR_BACKGROUND here
 
         // Render all entities through the renderer
         this.renderer.render();

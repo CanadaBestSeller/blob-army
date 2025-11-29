@@ -3,8 +3,6 @@
  * Handles rendering all game entities with depth sorting
  */
 
-import { project } from './Projection.js';
-
 export class Renderer {
     /**
      * Create a new Renderer
@@ -15,6 +13,7 @@ export class Renderer {
         this.ctx = ctx;
         this.camera = camera;
         this.entities = [];
+        this.wallpaper = null; // Optional wallpaper background
     }
 
     /**
@@ -44,6 +43,14 @@ export class Renderer {
     }
 
     /**
+     * Set the wallpaper background
+     * @param {Wallpaper} wallpaper - Wallpaper instance
+     */
+    setWallpaper(wallpaper) {
+        this.wallpaper = wallpaper;
+    }
+
+    /**
      * Render all entities with depth sorting
      * Two-pass rendering system ensures gates always appear above track
      */
@@ -51,19 +58,18 @@ export class Renderer {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
+        // PASS 0: Draw wallpaper (absolute background)
+        if (this.wallpaper) {
+            this.wallpaper.draw(this.ctx);
+        }
+
         // Remove entities marked for deletion
         this.entities = this.entities.filter(entity => !entity.shouldDelete());
 
-        // PASS 1: Draw track first (absolute background, always drawn first)
+        // PASS 1: Draw track (distance markers only)
         const track = this.entities.find(e => e.constructor.name === 'Track');
-        const center = { x: this.ctx.canvas.width / 2, y: this.ctx.canvas.height / 2 };
-
         if (track) {
-            // Track elements are drawn in fixed order as absolute background
-            if (track.drawGroundPlane) track.drawGroundPlane(this.ctx, this.camera, center);
-            if (track.drawDistanceMarkers) track.drawDistanceMarkers(this.ctx, this.camera, center);
-            if (track.drawLaneLines) track.drawLaneLines(this.ctx, this.camera, center);
-            // console.log('PASS 1: Drew track (background)');
+            track.draw(this.ctx, this.camera);
         }
 
         // PASS 2: Draw all non-track entities (gates, player) with depth sorting

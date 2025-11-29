@@ -8,37 +8,81 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background: #1a1a2e;
             font-family: 'Mulish', sans-serif;
             color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #testCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #4a4a6a;
+            max-width: 400px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            z-index: 1000;
         }
 
         h1 {
             margin-bottom: 10px;
+            font-size: 1.5rem;
         }
 
         .info {
             margin-bottom: 20px;
-            text-align: center;
             color: #aaaaaa;
-        }
-
-        #testCanvas {
-            border: 2px solid #4a4a6a;
-            background: #2d2d44;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            font-size: 0.9rem;
+            line-height: 1.4;
         }
 
         .controls {
             margin-top: 20px;
             display: flex;
-            gap: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .control-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #4a4a6a;
+        }
+
+        .control-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         button {
@@ -49,65 +93,104 @@
             color: #1a1a2e;
             font-weight: bold;
             cursor: pointer;
+            font-size: 0.9rem;
         }
 
         button:hover {
             background: #00dd77;
         }
+
+        label {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        input[type="color"] {
+            width: 40px;
+            height: 30px;
+            border: 1px solid #4a4a6a;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="range"] {
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <h1>Gate Entity Test - Task 8</h1>
-    <div class="info">
-        <p>Testing gate rendering with world scrolling</p>
-        <p><strong>Arrow Keys:</strong> Move player left/right | <strong>R/F:</strong> Camera up/down | <strong>T/G:</strong> Camera pitch</p>
-    </div>
+    <canvas id="testCanvas"></canvas>
 
-    <canvas id="testCanvas" width="800" height="600"></canvas>
-
-    <div class="controls">
-        <button id="startGame">Start Game</button>
-        <button id="stopGame">Stop Game</button>
-        <button id="resetGame">Reset</button>
-    </div>
-
-    <div class="controls" style="margin-top: 20px; flex-direction: column; align-items: flex-start;">
-        <h3 style="margin: 0 0 10px 0;">Gate Color</h3>
-        <div style="display: flex; gap: 15px; align-items: center;">
-            <label>
-                Color: <input type="color" id="gateColor" value="#ffff00">
-            </label>
-            <label>
-                Opacity: <input type="range" id="gateOpacity" min="0" max="100" value="25" style="width: 150px;">
-                <span id="opacityValue">25%</span>
-            </label>
+    <div class="ui-overlay">
+        <h1>Gate Entity Test - Task 8</h1>
+        <div class="info">
+            <p>Testing gate rendering with world scrolling</p>
+            <p><strong>Arrow Keys:</strong> Move player left/right<br>
+            <strong>R/F:</strong> Camera up/down<br>
+            <strong>T/G:</strong> Camera pitch</p>
         </div>
-    </div>
 
-    <div class="controls" style="margin-top: 20px; flex-direction: column; align-items: flex-start;">
-        <h3 style="margin: 0 0 10px 0;">Horizontal Markers</h3>
-        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-            <label>
-                Color: <input type="color" id="markerColor" value="#BB00FF">
-            </label>
-            <label>
-                Width: <input type="range" id="markerWidth" min="1" max="10" value="1" style="width: 150px;">
-                <span id="markerWidthValue">1px</span>
-            </label>
-            <label>
-                Glow: <input type="range" id="markerGlow" min="0" max="30" value="8" style="width: 150px;">
-                <span id="markerGlowValue">8px</span>
-            </label>
-            <label>
-                <input type="checkbox" id="markerInfinite" checked>
-                Infinite Width
-            </label>
+        <div class="controls">
+            <button id="startGame">Start Game</button>
+            <button id="stopGame">Stop Game</button>
+            <button id="resetGame">Reset</button>
+        </div>
+
+        <div class="control-section">
+            <h3>Gate Color</h3>
+            <div class="control-group">
+                <label>
+                    Color: <input type="color" id="gateColor" value="#ffff00">
+                </label>
+                <label>
+                    Opacity: <input type="range" id="gateOpacity" min="0" max="100" value="25" style="width: 120px;">
+                    <span id="opacityValue">25%</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Horizontal Markers</h3>
+            <div class="control-group">
+                <label>
+                    Color: <input type="color" id="markerColor" value="#BB00FF">
+                </label>
+                <label>
+                    Width: <input type="range" id="markerWidth" min="1" max="10" value="1" style="width: 120px;">
+                    <span id="markerWidthValue">1px</span>
+                </label>
+                <label>
+                    Glow: <input type="range" id="markerGlow" min="0" max="30" value="8" style="width: 120px;">
+                    <span id="markerGlowValue">8px</span>
+                </label>
+                <label>
+                    <input type="checkbox" id="markerInfinite" checked>
+                    Infinite Width
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Wallpaper (Stars)</h3>
+            <div class="control-group">
+                <label>
+                    Star Glow: <input type="range" id="starGlow" min="0" max="30" value="10" style="width: 120px;">
+                    <span id="starGlowValue">10px</span>
+                </label>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { Camera } from './rendering/Camera.js';
         import { Renderer } from './rendering/Renderer.js';
+        import { Wallpaper } from './rendering/Wallpaper.js';
         import { Track } from './entities/Track.js';
         import { Player } from './entities/Player.js';
         import { Gate } from './entities/Gate.js';
@@ -130,6 +213,35 @@
 
         // Create game instance
         const game = new Game(ctx, renderer, camera, inputManager);
+
+        // Create wallpaper
+        const wallpaper = new Wallpaper(window.innerWidth, window.innerHeight, {
+            starCount: 200,
+            starSizeMin: 1,
+            starSizeMax: 3,
+            glowIntensity: 10
+        });
+        renderer.setWallpaper(wallpaper);
+
+        // Function to resize canvas to full window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Resize wallpaper to match new canvas size
+            wallpaper.resize(window.innerWidth, window.innerHeight);
+
+            // Trigger re-render after resize
+            if (game && !game.isRunning) {
+                game.render();
+            }
+        }
+
+        // Set initial canvas size
+        resizeCanvas();
+
+        // Handle window resize
+        window.addEventListener('resize', resizeCanvas);
 
         // Create and add track
         const track = new Track();
@@ -338,6 +450,16 @@
 
         document.getElementById('markerInfinite').addEventListener('change', (e) => {
             window.MARKER_SETTINGS.infinite = e.target.checked;
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        // Star glow control
+        document.getElementById('starGlow').addEventListener('input', (e) => {
+            const glowValue = parseInt(e.target.value);
+            wallpaper.setGlowIntensity(glowValue);
+            document.getElementById('starGlowValue').textContent = glowValue + 'px';
             if (!game.isRunning) {
                 game.render();
             }
