@@ -349,6 +349,10 @@ export class Wallpaper {
             ctx.fill();
         });
 
+        // Reset global alpha after drawing stars
+        ctx.globalAlpha = 1.0;
+        ctx.shadowBlur = 0;
+
         // Draw the sun AFTER stars (foreground layer) - position already calculated above
         if (this.sunEnabled && this.sunLoaded && this.sunImage) {
             // Only draw sun if its center is above the horizon cutoff

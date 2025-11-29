@@ -122,6 +122,19 @@
         input[type="checkbox"] {
             cursor: pointer;
         }
+
+        .control-hideable {
+            transition: opacity 0.2s, max-height 0.3s;
+            overflow: hidden;
+        }
+
+        .control-hideable.hidden {
+            max-height: 0;
+            opacity: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -142,7 +155,14 @@
             <button id="resetGame">Reset</button>
         </div>
 
-        <div class="control-section">
+        <div style="margin-top: 15px;">
+            <label>
+                <input type="checkbox" id="hideHUD">
+                Hide HUD
+            </label>
+        </div>
+
+        <div class="control-section control-hideable">
             <h3>Gate Color</h3>
             <div class="control-group">
                 <label>
@@ -155,7 +175,7 @@
             </div>
         </div>
 
-        <div class="control-section">
+        <div class="control-section control-hideable">
             <h3>Horizontal Markers</h3>
             <div class="control-group">
                 <label>
@@ -176,7 +196,7 @@
             </div>
         </div>
 
-        <div class="control-section">
+        <div class="control-section control-hideable">
             <h3>Z-Axis Marker (Vertical)</h3>
             <div class="control-group">
                 <label>
@@ -193,7 +213,7 @@
             </div>
         </div>
 
-        <div class="control-section">
+        <div class="control-section control-hideable">
             <h3>Wallpaper (Stars)</h3>
             <div class="control-group">
                 <label>
@@ -203,7 +223,7 @@
             </div>
         </div>
 
-        <div class="control-section">
+        <div class="control-section control-hideable">
             <h3>Sun</h3>
             <div class="control-group">
                 <label>
@@ -221,19 +241,19 @@
             </div>
         </div>
 
-        <div class="control-section">
+        <div class="control-section control-hideable">
             <h3>Horizon Debug Line</h3>
             <div class="control-group">
                 <label>
-                    Color: <input type="color" id="horizonColor" value="#00ff00">
+                    Color: <input type="color" id="horizonColor" value="#ff00c8">
                 </label>
                 <label>
-                    Width: <input type="range" id="horizonWidth" min="1" max="10" value="2" style="width: 120px;">
-                    <span id="horizonWidthValue">2px</span>
+                    Width: <input type="range" id="horizonWidth" min="1" max="10" value="3" style="width: 120px;">
+                    <span id="horizonWidthValue">3px</span>
                 </label>
                 <label>
-                    Glow: <input type="range" id="horizonGlow" min="0" max="30" value="0" style="width: 120px;">
-                    <span id="horizonGlowValue">0px</span>
+                    Glow: <input type="range" id="horizonGlow" min="0" max="50" value="30" style="width: 120px;">
+                    <span id="horizonGlowValue">30px</span>
                 </label>
             </div>
         </div>
@@ -383,9 +403,11 @@
             originalRender();
 
             // Draw HUD - ensure it's within canvas bounds
-            ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(15, 15, 340, 160);
+            // Only draw HUD if enabled
+            if (!window.HIDE_HUD) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(15, 15, 480, 160);
 
             ctx.fillStyle = '#fff';
             ctx.font = '14px Mulish, sans-serif';
@@ -407,7 +429,8 @@
                 ctx.fillText(`Horizon: Y=${d.horizonScreenY.toFixed(1)} (Camera Y=${d.cameraY.toFixed(1)}) Canvas H=${d.canvasHeight}`, hudX, hudY + lineHeight * 6);
             }
 
-            ctx.restore();
+                ctx.restore();
+            }
 
             // DEBUG: Draw horizon cutoff line (drawn last so it appears on top)
             if (wallpaper.debugInfo) {
@@ -467,7 +490,10 @@
         window.Z_MARKER_SETTINGS = { color: '#BB00FF', width: 2, glow: 8 };
 
         // Initialize horizon debug line settings
-        window.HORIZON_LINE_SETTINGS = { color: '#00ff00', width: 2, glow: 0 };
+        window.HORIZON_LINE_SETTINGS = { color: '#ff00c8', width: 3, glow: 30 };
+
+        // Initialize HUD visibility
+        window.HIDE_HUD = false;
 
         // Oscillation animation
         let oscillationStartTime = performance.now();
@@ -622,6 +648,26 @@
         document.getElementById('horizonGlow').addEventListener('input', (e) => {
             window.HORIZON_LINE_SETTINGS.glow = parseInt(e.target.value);
             document.getElementById('horizonGlowValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        // HUD visibility toggle
+        document.getElementById('hideHUD').addEventListener('change', (e) => {
+            const isHidden = e.target.checked;
+            window.HIDE_HUD = isHidden;
+
+            // Toggle control sections visibility
+            const controlSections = document.querySelectorAll('.control-hideable');
+            controlSections.forEach(section => {
+                if (isHidden) {
+                    section.classList.add('hidden');
+                } else {
+                    section.classList.remove('hidden');
+                }
+            });
+
             if (!game.isRunning) {
                 game.render();
             }
