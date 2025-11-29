@@ -189,6 +189,21 @@ export class Wallpaper {
             };
         }
 
+        // Calculate sun position first (needed to check star occlusion)
+        let sunX = this.sunBaseX * ctx.canvas.width;
+        let sunY = this.sunBaseY * ctx.canvas.height;
+        let sunRadius = this.sunSize / 2;
+
+        // Apply parallax to sun position
+        if (camera) {
+            const camPos = camera.getPosition();
+            sunX += camPos.x * this.sunParallaxFactor * 0.5;
+            sunY -= camPos.y * this.sunParallaxFactor;
+            const angleDegrees = camPos.angle !== undefined ? camPos.angle : 45;
+            const angleOffset = (angleDegrees - 45) * 2;
+            sunY -= angleOffset * this.sunParallaxFactor;
+        }
+
         // Draw each star first (background layer), but only if it's above the cutoff line
         // In screen space, "above" means smaller Y values (Y increases downward)
         this.stars.forEach(star => {
@@ -219,6 +234,16 @@ export class Wallpaper {
                 return; // Skip this star
             }
 
+            // Skip stars that are occluded by the sun
+            if (this.sunEnabled && this.sunLoaded) {
+                const dx = starX - sunX;
+                const dy = starY - sunY;
+                const distanceToSun = Math.sqrt(dx * dx + dy * dy);
+                if (distanceToSun < sunRadius) {
+                    return; // Skip this star - it's behind the sun
+                }
+            }
+
             ctx.beginPath();
 
             // Apply glow effect
@@ -236,28 +261,8 @@ export class Wallpaper {
             ctx.fill();
         });
 
-        // Draw the sun AFTER stars (foreground layer) with parallax
+        // Draw the sun AFTER stars (foreground layer) - position already calculated above
         if (this.sunEnabled && this.sunLoaded && this.sunImage) {
-            // Calculate sun position with parallax
-            let sunX = this.sunBaseX * ctx.canvas.width;
-            let sunY = this.sunBaseY * ctx.canvas.height;
-
-            // Apply parallax effect based on camera position and angle
-            if (camera) {
-                const camPos = camera.getPosition();
-                // Sun moves with camera movement (creating depth illusion)
-                // Horizontal parallax is half of vertical to reduce left-right movement
-                sunX += camPos.x * this.sunParallaxFactor * 0.5;
-                // Vertical parallax - sun moves up when camera moves up
-                sunY -= camPos.y * this.sunParallaxFactor;
-
-                // Angle-based parallax - sun shifts vertically based on camera pitch
-                // When camera tilts up (increasing angle), sun should move up
-                const angleDegrees = camPos.angle !== undefined ? camPos.angle : 45;
-                const angleOffset = (angleDegrees - 45) * 2; // Scale the angle effect
-                sunY -= angleOffset * this.sunParallaxFactor;
-            }
-
             // Only draw sun if its center is above the horizon cutoff
             // Skip if the sun center is at or below the cutoff line
             if (camera && sunY >= cutoffY) {
@@ -281,8 +286,8 @@ export class Wallpaper {
                 // Draw sun image centered at calculated position
                 ctx.drawImage(
                     this.sunImage,
-                    sunX - this.sunSize / 2,
-                    sunY - this.sunSize / 2,
+                    sunX - sunRadius,
+                    sunY - sunRadius,
                     this.sunSize,
                     this.sunSize
                 );
