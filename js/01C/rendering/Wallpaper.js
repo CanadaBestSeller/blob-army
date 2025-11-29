@@ -31,6 +31,11 @@ export class Wallpaper {
         this.sunBaseY = options.sunBaseY || 0.35; // Relative position (0-1, 0.35 = 35% from top, slightly lower)
         this.sunParallaxFactor = options.sunParallaxFactor || 0.3; // Parallax strength (increased for visibility)
 
+        // Galaxy/Aurora gradient settings
+        this.galaxyEnabled = options.galaxyEnabled !== false; // Enabled by default
+        this.galaxyLayers = this.generateGalaxyLayers();
+        this.galaxyAnimationTime = 0; // Animation time counter
+
         // Load sun image
         if (this.sunEnabled) {
             this.loadSunImage();
@@ -53,6 +58,55 @@ export class Wallpaper {
             this.sunEnabled = false;
         };
         this.sunImage.src = './assets/sun.png';
+    }
+
+    /**
+     * Generate galaxy/aurora gradient layers
+     * @returns {Array} Array of layer objects
+     */
+    generateGalaxyLayers() {
+        return [
+            {
+                // Purple/magenta wispy cloud
+                colors: ['rgba(138, 43, 226, 0.25)', 'rgba(186, 85, 211, 0.15)', 'rgba(138, 43, 226, 0)'],
+                stops: [0, 0.3, 1],
+                offsetX: 0.2,
+                offsetY: 0.3,
+                speed: 0.15,
+                scale: 0.4,
+                compositeMode: 'screen'
+            },
+            {
+                // Blue/cyan wispy cloud
+                colors: ['rgba(0, 191, 255, 0.2)', 'rgba(30, 144, 255, 0.12)', 'rgba(0, 191, 255, 0)'],
+                stops: [0, 0.35, 1],
+                offsetX: 0.7,
+                offsetY: 0.2,
+                speed: 0.1,
+                scale: 0.5,
+                compositeMode: 'screen'
+            },
+            {
+                // Pink/rose wispy cloud
+                colors: ['rgba(255, 20, 147, 0.18)', 'rgba(255, 105, 180, 0.1)', 'rgba(255, 20, 147, 0)'],
+                stops: [0, 0.3, 1],
+                offsetX: 0.5,
+                offsetY: 0.6,
+                speed: 0.2,
+                scale: 0.45,
+                compositeMode: 'screen'
+            },
+            {
+                // Teal/green accent
+                colors: ['rgba(64, 224, 208, 0.15)', 'rgba(72, 209, 204, 0.08)', 'rgba(64, 224, 208, 0)'],
+                stops: [0, 0.25, 1],
+                offsetX: 0.8,
+                offsetY: 0.7,
+                speed: 0.12,
+                scale: 0.35,
+                compositeMode: 'screen'
+            }
+        ];
     }
 
     /**
@@ -143,6 +197,9 @@ export class Wallpaper {
      * @param {Camera} camera - Camera object (optional, used to calculate horizon)
      */
     draw(ctx, camera = null) {
+        // Update animation time
+        this.galaxyAnimationTime += 0.01;
+
         // Save context state
         ctx.save();
 
@@ -187,6 +244,37 @@ export class Wallpaper {
                 farthestMarkerZ: farthestZ,
                 canvasHeight: ctx.canvas.height
             };
+        }
+
+        // Draw galaxy/aurora gradient layers (deepest background)
+        if (this.galaxyEnabled) {
+            this.galaxyLayers.forEach(layer => {
+                ctx.save();
+
+                // Set composite mode for blending
+                ctx.globalCompositeOperation = layer.compositeMode || 'screen';
+
+                // Calculate animated position for this layer
+                const animOffset = Math.sin(this.galaxyAnimationTime * layer.speed) * 150;
+                const animOffsetY = Math.cos(this.galaxyAnimationTime * layer.speed * 0.7) * 100;
+                const centerX = (layer.offsetX * ctx.canvas.width) + animOffset;
+                const centerY = (layer.offsetY * ctx.canvas.height) + animOffsetY;
+
+                // Create radial gradient - smaller, more concentrated
+                const radius = Math.max(ctx.canvas.width, ctx.canvas.height) * layer.scale;
+                const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+
+                // Add color stops
+                layer.stops.forEach((stop, i) => {
+                    gradient.addColorStop(stop, layer.colors[i]);
+                });
+
+                // Draw gradient
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+                ctx.restore();
+            });
         }
 
         // Calculate sun position first (needed to check star occlusion)
