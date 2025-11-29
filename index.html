@@ -5,26 +5,689 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blob Army | David's Portfolio</title>
     <meta name="description" content="A physics experiment by David Li">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            font-family: 'Mulish', sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+        }
+
+        /* Portfolio Button */
+        .portfolio-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 12px 20px;
+            background: rgba(26, 26, 46, 0.9);
+            border: 2px solid #4a4a6a;
+            border-radius: 8px;
+            color: #00ff88;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .portfolio-button:hover {
+            background: rgba(26, 26, 46, 0.95);
+            color: #00dd77;
+            border-color: #00ff88;
+            padding: 12px 24px;
+        }
+
+        .arrow {
+            font-size: 1.44rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 0.3em;
+        }
+
+        .button-text {
+            max-width: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .portfolio-button:hover .button-text {
+            max-width: 200px;
+            opacity: 1;
+        }
+
+        /* Debug UI */
+        .debug-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #4a4a6a;
+            max-width: 400px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .debug-panel h2 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .control-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #4a4a6a;
+        }
+
+        .control-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        input[type="color"] {
+            width: 40px;
+            height: 30px;
+            border: 1px solid #4a4a6a;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="range"] {
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .control-hideable {
+            transition: opacity 0.2s, max-height 0.3s;
+            overflow: hidden;
+        }
+
+        .control-hideable.hidden {
+            max-height: 0;
+            opacity: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
+        }
+
+        button:hover {
+            background: #00dd77 !important;
+        }
+    </style>
 </head>
 <body>
-
-<!-- NAV HEADER -->
-<nav class="portfolio-nav">
-    <!-- Update this link to match your Carrd section -->
-    <a href="https://hello-david.carrd.co/#portfolio" class="back-link">
-        <span class="arrow">←</span> Back to Portfolio
-    </a>
-    <div class="nav-title">Blob Army v1.0</div>
-</nav>
-
-<!-- GAME CONTAINER -->
-<main class="game-container">
     <canvas id="gameCanvas"></canvas>
-</main>
 
-<div class="instructions">Click inside the box to spawn Blobs</div>
+    <!-- Portfolio Button -->
+    <a href="https://hello-david.carrd.co/#portfolio" class="portfolio-button">
+        <i class="fas fa-arrow-left arrow"></i>
+        <span class="button-text">Back to David's Portfolio</span>
+    </a>
 
-<script src="js/main.js"></script>
+    <!-- Debug Panel -->
+    <div class="debug-panel">
+        <h2>Gate Entity Test - Task 8</h2>
+        <div style="margin-bottom: 20px; color: #aaaaaa; font-size: 0.9rem; line-height: 1.4;">
+            <p>Testing gate rendering with world scrolling</p>
+            <p><strong>Arrow Keys:</strong> Move player left/right<br>
+            <strong>R/F:</strong> Camera up/down<br>
+            <strong>T/G:</strong> Camera pitch</p>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button id="startGame" style="padding: 10px 20px; background: #00ff88; border: none; border-radius: 4px; color: #1a1a2e; font-weight: bold; cursor: pointer;">Start Game</button>
+            <button id="stopGame" style="padding: 10px 20px; background: #00ff88; border: none; border-radius: 4px; color: #1a1a2e; font-weight: bold; cursor: pointer;">Stop Game</button>
+            <button id="resetGame" style="padding: 10px 20px; background: #00ff88; border: none; border-radius: 4px; color: #1a1a2e; font-weight: bold; cursor: pointer;">Reset</button>
+        </div>
+
+        <div style="margin-top: 15px;">
+            <label>
+                <input type="checkbox" id="hideHUD">
+                Hide HUD
+            </label>
+        </div>
+
+        <div class="control-section control-hideable">
+            <h3>Gate Color</h3>
+            <div class="control-group">
+                <label>
+                    Color: <input type="color" id="gateColor" value="#ffff00">
+                </label>
+                <label>
+                    Opacity: <input type="range" id="gateOpacity" min="0" max="100" value="25" style="width: 120px;">
+                    <span id="opacityValue">25%</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section control-hideable">
+            <h3>Horizontal Markers</h3>
+            <div class="control-group">
+                <label>
+                    Color: <input type="color" id="markerColor" value="#BB00FF">
+                </label>
+                <label>
+                    Width: <input type="range" id="markerWidth" min="1" max="10" value="1" style="width: 120px;">
+                    <span id="markerWidthValue">1px</span>
+                </label>
+                <label>
+                    Glow: <input type="range" id="markerGlow" min="0" max="30" value="8" style="width: 120px;">
+                    <span id="markerGlowValue">8px</span>
+                </label>
+                <label>
+                    <input type="checkbox" id="markerInfinite" checked>
+                    Infinite Width
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section control-hideable">
+            <h3>Z-Axis Marker (Vertical)</h3>
+            <div class="control-group">
+                <label>
+                    Color: <input type="color" id="zMarkerColor" value="#BB00FF">
+                </label>
+                <label>
+                    Width: <input type="range" id="zMarkerWidth" min="1" max="10" value="2" style="width: 120px;">
+                    <span id="zMarkerWidthValue">2px</span>
+                </label>
+                <label>
+                    Glow: <input type="range" id="zMarkerGlow" min="0" max="30" value="8" style="width: 120px;">
+                    <span id="zMarkerGlowValue">8px</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section control-hideable">
+            <h3>Wallpaper (Stars)</h3>
+            <div class="control-group">
+                <label>
+                    Star Glow: <input type="range" id="starGlow" min="0" max="30" value="10" style="width: 120px;">
+                    <span id="starGlowValue">10px</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section control-hideable">
+            <h3>Sun</h3>
+            <div class="control-group">
+                <label>
+                    Size: <input type="range" id="sunSize" min="50" max="1000" value="600" style="width: 120px;">
+                    <span id="sunSizeValue">600px</span>
+                </label>
+                <label>
+                    Glow: <input type="range" id="sunGlow" min="0" max="200" value="100" style="width: 120px;">
+                    <span id="sunGlowValue">100px</span>
+                </label>
+                <label>
+                    Parallax: <input type="range" id="sunParallax" min="0" max="50" value="30" style="width: 120px;">
+                    <span id="sunParallaxValue">0.30</span>
+                </label>
+                <label>
+                    Y Position: <input type="range" id="sunYPosition" min="0" max="100" value="33" style="width: 120px;">
+                    <span id="sunYPositionValue">33%</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section control-hideable">
+            <h3>Star Parallax</h3>
+            <div class="control-group">
+                <label>
+                    Parallax Factor: <input type="range" id="starParallax" min="0" max="50" value="4" style="width: 120px;">
+                    <span id="starParallaxValue">0.04</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section control-hideable">
+            <h3>Horizon Debug Line</h3>
+            <div class="control-group">
+                <label>
+                    Color: <input type="color" id="horizonColor" value="#ff00c8">
+                </label>
+                <label>
+                    Width: <input type="range" id="horizonWidth" min="1" max="10" value="3" style="width: 120px;">
+                    <span id="horizonWidthValue">3px</span>
+                </label>
+                <label>
+                    Glow: <input type="range" id="horizonGlow" min="0" max="50" value="30" style="width: 120px;">
+                    <span id="horizonGlowValue">30px</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { Camera } from './js/01C/rendering/Camera.js';
+        import { Renderer } from './js/01C/rendering/Renderer.js';
+        import { Wallpaper } from './js/01C/rendering/Wallpaper.js';
+        import { Track } from './js/01C/entities/Track.js';
+        import { Player } from './js/01C/entities/Player.js';
+        import { Gate } from './js/01C/entities/Gate.js';
+        import { InputManager } from './js/01C/systems/InputManager.js';
+        import { Game } from './js/01C/game/Game.js';
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Create input manager
+        const inputManager = new InputManager();
+
+        // Create camera
+        const camera = new Camera();
+
+        // Create renderer
+        const renderer = new Renderer(ctx, camera);
+
+        // Create game instance
+        const game = new Game(ctx, renderer, camera, inputManager);
+
+        // Create wallpaper
+        const wallpaper = new Wallpaper(window.innerWidth, window.innerHeight, {
+            starCount: 200,
+            starSizeMin: 1,
+            starSizeMax: 3,
+            glowIntensity: 10
+        });
+        renderer.setWallpaper(wallpaper);
+
+        // Function to resize canvas to full window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Resize wallpaper to match new canvas size
+            wallpaper.resize(window.innerWidth, window.innerHeight);
+
+            // Trigger re-render after resize
+            if (game && !game.isRunning) {
+                game.render();
+            }
+        }
+
+        // Set initial canvas size
+        resizeCanvas();
+
+        // Handle window resize
+        window.addEventListener('resize', resizeCanvas);
+
+        // Create and add track
+        const track = new Track();
+        game.addEntity(track);
+
+        // Create and add player at origin
+        const player = new Player(0, 0.5, 0);
+        game.addEntity(player);
+
+        // Manually spawn test gates at different distances
+        const gate1 = new Gate(-100, 50, 500, 15);
+        const gate2 = new Gate(100, 50, 500, -10);
+        game.addEntity(gate1);
+        game.addEntity(gate2);
+
+        const gate3 = new Gate(-100, 50, 1000, -5);
+        const gate4 = new Gate(100, 50, 1000, 20);
+        game.addEntity(gate3);
+        game.addEntity(gate4);
+
+        const gate5 = new Gate(-100, 50, 1500, 8);
+        const gate6 = new Gate(100, 50, 1500, -15);
+        game.addEntity(gate5);
+        game.addEntity(gate6);
+
+        // Initialize gate color with oscillation
+        window.GATE_COLOR = { r: 255, g: 255, b: 0, a: 0.35, baseOpacity: 0.35, oscillate: true };
+
+        // Initialize marker settings
+        window.MARKER_SETTINGS = { color: '#BB00FF', width: 1, glow: 8, infinite: true };
+
+        // Initialize Z-axis marker settings
+        window.Z_MARKER_SETTINGS = { color: '#BB00FF', width: 2, glow: 8 };
+
+        // Initialize horizon debug line settings
+        window.HORIZON_LINE_SETTINGS = { color: '#ff00c8', width: 3, glow: 30 };
+
+        // Initialize HUD visibility
+        window.HIDE_HUD = false;
+
+        // Camera controls (using raw key tracking for camera, not InputManager)
+        const cameraSpeed = 400;
+        const cameraPitchSpeed = 1.0;
+        const cameraDistanceSpeed = 200;
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        // Separate camera control and render loop that runs independently of game
+        let lastCameraUpdateTime = performance.now();
+        function updateCameraControls() {
+            const currentTime = performance.now();
+            const deltaTime = (currentTime - lastCameraUpdateTime) / 1000;
+            lastCameraUpdateTime = currentTime;
+
+            // Apply camera controls
+            if (keys['r']) camera.y += cameraSpeed * deltaTime;
+            if (keys['f']) camera.y -= cameraSpeed * deltaTime;
+            if (keys['t']) camera.setAngle(camera.angle + cameraPitchSpeed);
+            if (keys['g']) camera.setAngle(camera.angle - cameraPitchSpeed);
+            if (keys['w']) {
+                camera.distance -= cameraDistanceSpeed * deltaTime;
+                if (!game.isRunning) {
+                    camera.z = player.z - camera.distance;
+                }
+            }
+            if (keys['s']) {
+                camera.distance += cameraDistanceSpeed * deltaTime;
+                if (!game.isRunning) {
+                    camera.z = player.z - camera.distance;
+                }
+            }
+
+            // If game is not running, manually render the scene
+            if (!game.isRunning) {
+                game.render();
+            }
+
+            requestAnimationFrame(updateCameraControls);
+        }
+        updateCameraControls(); // Start the camera control loop
+
+        // Override the game's update to include camera controls
+        const originalUpdate = game.update.bind(game);
+        game.update = function(deltaTime) {
+            originalUpdate(deltaTime);
+        };
+
+        // Override the game's render to include HUD
+        const originalRender = game.render.bind(game);
+        game.render = function() {
+            originalRender();
+
+            // Draw HUD
+            if (!window.HIDE_HUD) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(15, 15, 480, 160);
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '14px Mulish, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                const hudX = 25;
+                const hudY = 25;
+                const lineHeight = 16;
+
+                ctx.fillText(`Camera: X=${camera.x.toFixed(0)} Y=${camera.y.toFixed(0)} Z=${camera.z.toFixed(0)} Pitch=${camera.angle.toFixed(1)}° Dist=${camera.distance.toFixed(0)}`, hudX, hudY);
+                ctx.fillText(`Player: X=${player.x.toFixed(1)} Y=${player.y.toFixed(1)} Z=${player.z.toFixed(1)}`, hudX, hudY + lineHeight);
+                ctx.fillText(`Distance: ${game.getDistanceInMeters().toFixed(1)} m`, hudX, hudY + lineHeight * 2);
+                ctx.fillText(`Blob Count: ${player.getBlobCount()}`, hudX, hudY + lineHeight * 3);
+                ctx.fillText('Gates at Z: 500, 1000, 1500', hudX, hudY + lineHeight * 4.5);
+
+                if (wallpaper.debugInfo) {
+                    const d = wallpaper.debugInfo;
+                    ctx.fillText(`Horizon: Y=${d.horizonScreenY.toFixed(1)} (Camera Y=${d.cameraY.toFixed(1)}) Canvas H=${d.canvasHeight}`, hudX, hudY + lineHeight * 6);
+                }
+
+                ctx.restore();
+            }
+
+            // DEBUG: Draw horizon cutoff line
+            if (wallpaper.debugInfo) {
+                const horizonSettings = window.HORIZON_LINE_SETTINGS || { color: '#00ff00', width: 2, glow: 0 };
+                ctx.save();
+
+                if (horizonSettings.glow > 0) {
+                    ctx.shadowBlur = horizonSettings.glow;
+                    ctx.shadowColor = horizonSettings.color;
+                }
+
+                ctx.strokeStyle = horizonSettings.color;
+                ctx.lineWidth = horizonSettings.width;
+                ctx.globalAlpha = 0.7;
+                ctx.beginPath();
+                ctx.moveTo(0, wallpaper.debugInfo.horizonScreenY);
+                ctx.lineTo(ctx.canvas.width, wallpaper.debugInfo.horizonScreenY);
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
+
+        // Oscillation animation
+        let oscillationStartTime = performance.now();
+        function updateGateOpacity() {
+            if (window.GATE_COLOR.oscillate) {
+                const elapsed = (performance.now() - oscillationStartTime) / 1000;
+                const oscillation = Math.sin(elapsed * 4) * 0.5 + 0.5;
+                window.GATE_COLOR.a = 0.2 + (oscillation * 0.3);
+            }
+            requestAnimationFrame(updateGateOpacity);
+        }
+        updateGateOpacity();
+
+        // Button handlers
+        document.getElementById('startGame').addEventListener('click', () => {
+            game.start();
+        });
+
+        document.getElementById('stopGame').addEventListener('click', () => {
+            game.stop();
+        });
+
+        document.getElementById('resetGame').addEventListener('click', () => {
+            game.reset();
+            player.setPosition(0, 0.5, 0);
+            gate1.setPosition(-100, 50, 500);
+            gate2.setPosition(100, 50, 500);
+            gate3.setPosition(-100, 50, 1000);
+            gate4.setPosition(100, 50, 1000);
+            gate5.setPosition(-100, 50, 1500);
+            gate6.setPosition(100, 50, 1500);
+        });
+
+        // Gate color controls
+        document.getElementById('gateColor').addEventListener('input', (e) => {
+            const hex = e.target.value;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            window.GATE_COLOR.r = r;
+            window.GATE_COLOR.g = g;
+            window.GATE_COLOR.b = b;
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('gateOpacity').addEventListener('input', (e) => {
+            const opacity = parseInt(e.target.value) / 100;
+            window.GATE_COLOR.baseOpacity = opacity;
+            window.GATE_COLOR.a = opacity;
+            window.GATE_COLOR.oscillate = false;
+            document.getElementById('opacityValue').textContent = e.target.value + '%';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        // Marker controls
+        document.getElementById('markerColor').addEventListener('input', (e) => {
+            window.MARKER_SETTINGS.color = e.target.value;
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('markerWidth').addEventListener('input', (e) => {
+            window.MARKER_SETTINGS.width = parseInt(e.target.value);
+            document.getElementById('markerWidthValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('markerGlow').addEventListener('input', (e) => {
+            window.MARKER_SETTINGS.glow = parseInt(e.target.value);
+            document.getElementById('markerGlowValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('markerInfinite').addEventListener('change', (e) => {
+            window.MARKER_SETTINGS.infinite = e.target.checked;
+            if (!game.isRunning) game.render();
+        });
+
+        // Z-axis marker controls
+        document.getElementById('zMarkerColor').addEventListener('input', (e) => {
+            window.Z_MARKER_SETTINGS.color = e.target.value;
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('zMarkerWidth').addEventListener('input', (e) => {
+            window.Z_MARKER_SETTINGS.width = parseInt(e.target.value);
+            document.getElementById('zMarkerWidthValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('zMarkerGlow').addEventListener('input', (e) => {
+            window.Z_MARKER_SETTINGS.glow = parseInt(e.target.value);
+            document.getElementById('zMarkerGlowValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        // Star glow control
+        document.getElementById('starGlow').addEventListener('input', (e) => {
+            const glowValue = parseInt(e.target.value);
+            wallpaper.setGlowIntensity(glowValue);
+            document.getElementById('starGlowValue').textContent = glowValue + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        // Sun controls
+        document.getElementById('sunSize').addEventListener('input', (e) => {
+            const sizeValue = parseInt(e.target.value);
+            wallpaper.setSunSize(sizeValue);
+            document.getElementById('sunSizeValue').textContent = sizeValue + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('sunGlow').addEventListener('input', (e) => {
+            const glowValue = parseInt(e.target.value);
+            wallpaper.setSunGlow(glowValue);
+            document.getElementById('sunGlowValue').textContent = glowValue + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('sunParallax').addEventListener('input', (e) => {
+            const parallaxValue = parseInt(e.target.value) / 100;
+            wallpaper.setSunParallaxFactor(parallaxValue);
+            document.getElementById('sunParallaxValue').textContent = parallaxValue.toFixed(2);
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('sunYPosition').addEventListener('input', (e) => {
+            const yPosition = parseInt(e.target.value) / 100;
+            wallpaper.setSunBaseY(yPosition);
+            document.getElementById('sunYPositionValue').textContent = e.target.value + '%';
+            if (!game.isRunning) game.render();
+        });
+
+        // Star parallax control
+        document.getElementById('starParallax').addEventListener('input', (e) => {
+            const parallaxValue = parseInt(e.target.value) / 100;
+            wallpaper.setStarParallaxFactor(parallaxValue);
+            document.getElementById('starParallaxValue').textContent = parallaxValue.toFixed(2);
+            if (!game.isRunning) game.render();
+        });
+
+        // Horizon debug line controls
+        document.getElementById('horizonColor').addEventListener('input', (e) => {
+            window.HORIZON_LINE_SETTINGS.color = e.target.value;
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('horizonWidth').addEventListener('input', (e) => {
+            window.HORIZON_LINE_SETTINGS.width = parseInt(e.target.value);
+            document.getElementById('horizonWidthValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('horizonGlow').addEventListener('input', (e) => {
+            window.HORIZON_LINE_SETTINGS.glow = parseInt(e.target.value);
+            document.getElementById('horizonGlowValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        // HUD visibility toggle
+        document.getElementById('hideHUD').addEventListener('change', (e) => {
+            const isHidden = e.target.checked;
+            window.HIDE_HUD = isHidden;
+
+            const controlSections = document.querySelectorAll('.control-hideable');
+            controlSections.forEach(section => {
+                if (isHidden) {
+                    section.classList.add('hidden');
+                } else {
+                    section.classList.remove('hidden');
+                }
+            });
+
+            if (!game.isRunning) game.render();
+        });
+
+        // Don't auto-start the game
+        console.log('Blob Army initialized');
+        console.log('Use arrow keys to move, R/F for camera Y, T/G for camera pitch');
+        console.log('Sun enabled:', wallpaper.sunEnabled, 'loaded:', wallpaper.sunLoaded);
+    </script>
 </body>
 </html>

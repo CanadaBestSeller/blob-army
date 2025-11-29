@@ -224,19 +224,33 @@
         </div>
 
         <div class="control-section control-hideable">
+            <h3>Star Parallax</h3>
+            <div class="control-group">
+                <label>
+                    Parallax Factor: <input type="range" id="starParallax" min="0" max="50" value="4" style="width: 120px;">
+                    <span id="starParallaxValue">0.04</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section control-hideable">
             <h3>Sun</h3>
             <div class="control-group">
                 <label>
-                    Size: <input type="range" id="sunSize" min="50" max="600" value="500" style="width: 120px;">
-                    <span id="sunSizeValue">500px</span>
+                    Size: <input type="range" id="sunSize" min="50" max="1000" value="600" style="width: 120px;">
+                    <span id="sunSizeValue">600px</span>
                 </label>
                 <label>
-                    Glow: <input type="range" id="sunGlow" min="0" max="100" value="40" style="width: 120px;">
-                    <span id="sunGlowValue">40px</span>
+                    Glow: <input type="range" id="sunGlow" min="0" max="200" value="100" style="width: 120px;">
+                    <span id="sunGlowValue">100px</span>
                 </label>
                 <label>
-                    Parallax: <input type="range" id="sunParallax" min="0" max="50" value="15" style="width: 120px;">
-                    <span id="sunParallaxValue">0.15</span>
+                    Parallax: <input type="range" id="sunParallax" min="0" max="50" value="30" style="width: 120px;">
+                    <span id="sunParallaxValue">0.30</span>
+                </label>
+                <label>
+                    Y Position: <input type="range" id="sunYPosition" min="0" max="100" value="33" style="width: 120px;">
+                    <span id="sunYPositionValue">33%</span>
                 </label>
             </div>
         </div>
@@ -600,6 +614,25 @@
             const parallaxValue = parseInt(e.target.value) / 100; // Convert to 0-0.5 range
             wallpaper.setSunParallaxFactor(parallaxValue);
             document.getElementById('sunParallaxValue').textContent = parallaxValue.toFixed(2);
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('sunYPosition').addEventListener('input', (e) => {
+            const yPosition = parseInt(e.target.value) / 100;
+            wallpaper.setSunBaseY(yPosition);
+            document.getElementById('sunYPositionValue').textContent = e.target.value + '%';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        // Star parallax control
+        document.getElementById('starParallax').addEventListener('input', (e) => {
+            const parallaxValue = parseInt(e.target.value) / 100;
+            wallpaper.setStarParallaxFactor(parallaxValue);
+            document.getElementById('starParallaxValue').textContent = parallaxValue.toFixed(2);
             if (!game.isRunning) {
                 game.render();
             }

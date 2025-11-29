@@ -19,16 +19,16 @@ export class Wallpaper {
         this.starSizeMin = options.starSizeMin || 1;
         this.starSizeMax = options.starSizeMax || 3;
         this.glowIntensity = options.glowIntensity || 10; // Glow blur radius
-        this.starParallaxFactor = options.starParallaxFactor || 0.1; // Parallax for stars (increased for visibility)
+        this.starParallaxFactor = options.starParallaxFactor || 0.04; // Parallax for stars
 
         // Sun settings
         this.sunEnabled = options.sunEnabled !== false; // Enabled by default
         this.sunImage = null;
         this.sunLoaded = false;
-        this.sunSize = options.sunSize || 500; // Size in pixels (25% bigger)
-        this.sunGlow = options.sunGlow || 40; // Glow blur radius
+        this.sunSize = options.sunSize || 600; // Size in pixels
+        this.sunGlow = options.sunGlow || 100; // Glow blur radius
         this.sunBaseX = options.sunBaseX || 0.5; // Relative position (0-1, 0.5 = centered)
-        this.sunBaseY = options.sunBaseY || 0.35; // Relative position (0-1, 0.35 = 35% from top, slightly lower)
+        this.sunBaseY = options.sunBaseY || 0.33; // Relative position (0-1, 0.33 = 33% from top)
         this.sunParallaxFactor = options.sunParallaxFactor || 0.3; // Parallax strength (increased for visibility)
 
         // Galaxy/Aurora gradient settings
@@ -52,12 +52,16 @@ export class Wallpaper {
         this.sunImage = new Image();
         this.sunImage.onload = () => {
             this.sunLoaded = true;
+            console.log('Sun image loaded successfully');
         };
-        this.sunImage.onerror = () => {
-            console.error('Failed to load sun image');
+        this.sunImage.onerror = (error) => {
+            console.error('Failed to load sun image:', error);
+            console.error('Attempted path:', new URL('../assets/sun.png', import.meta.url).href);
             this.sunEnabled = false;
         };
-        this.sunImage.src = './assets/sun.png';
+        // Use import.meta.url to create absolute path from module location
+        this.sunImage.src = new URL('../assets/sun.png', import.meta.url).href;
+        console.log('Loading sun image from:', this.sunImage.src);
     }
 
     /**
@@ -178,6 +182,22 @@ export class Wallpaper {
      */
     setSunParallaxFactor(factor) {
         this.sunParallaxFactor = factor;
+    }
+
+    /**
+     * Update sun base Y position
+     * @param {number} yPosition - Y position (0-1, where 0 is top and 1 is bottom)
+     */
+    setSunBaseY(yPosition) {
+        this.sunBaseY = yPosition;
+    }
+
+    /**
+     * Update star parallax factor
+     * @param {number} factor - Parallax strength (0 = no movement, higher = more movement)
+     */
+    setStarParallaxFactor(factor) {
+        this.starParallaxFactor = factor;
     }
 
     /**
