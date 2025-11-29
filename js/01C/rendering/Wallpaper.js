@@ -19,9 +19,40 @@ export class Wallpaper {
         this.starSizeMin = options.starSizeMin || 1;
         this.starSizeMax = options.starSizeMax || 3;
         this.glowIntensity = options.glowIntensity || 10; // Glow blur radius
+        this.starParallaxFactor = options.starParallaxFactor || 0.1; // Parallax for stars (increased for visibility)
+
+        // Sun settings
+        this.sunEnabled = options.sunEnabled !== false; // Enabled by default
+        this.sunImage = null;
+        this.sunLoaded = false;
+        this.sunSize = options.sunSize || 500; // Size in pixels (25% bigger)
+        this.sunGlow = options.sunGlow || 40; // Glow blur radius
+        this.sunBaseX = options.sunBaseX || 0.5; // Relative position (0-1, 0.5 = centered)
+        this.sunBaseY = options.sunBaseY || 0.35; // Relative position (0-1, 0.35 = 35% from top, slightly lower)
+        this.sunParallaxFactor = options.sunParallaxFactor || 0.3; // Parallax strength (increased for visibility)
+
+        // Load sun image
+        if (this.sunEnabled) {
+            this.loadSunImage();
+        }
 
         // Generate stars
         this.stars = this.generateStars();
+    }
+
+    /**
+     * Load the sun image
+     */
+    loadSunImage() {
+        this.sunImage = new Image();
+        this.sunImage.onload = () => {
+            this.sunLoaded = true;
+        };
+        this.sunImage.onerror = () => {
+            console.error('Failed to load sun image');
+            this.sunEnabled = false;
+        };
+        this.sunImage.src = './assets/sun.png';
     }
 
     /**
@@ -69,6 +100,30 @@ export class Wallpaper {
      */
     setGlowIntensity(intensity) {
         this.glowIntensity = intensity;
+    }
+
+    /**
+     * Update sun glow intensity
+     * @param {number} glow - Sun glow blur radius
+     */
+    setSunGlow(glow) {
+        this.sunGlow = glow;
+    }
+
+    /**
+     * Update sun size
+     * @param {number} size - Sun size in pixels
+     */
+    setSunSize(size) {
+        this.sunSize = size;
+    }
+
+    /**
+     * Update sun parallax factor
+     * @param {number} factor - Parallax strength (0 = no movement, higher = more movement)
+     */
+    setSunParallaxFactor(factor) {
+        this.sunParallaxFactor = factor;
     }
 
     /**
@@ -134,11 +189,33 @@ export class Wallpaper {
             };
         }
 
-        // Draw each star, but only if it's above the cutoff line
+        // Draw each star first (background layer), but only if it's above the cutoff line
         // In screen space, "above" means smaller Y values (Y increases downward)
         this.stars.forEach(star => {
+            // Calculate star position with parallax
+            let starX = star.x;
+            let starY = star.y;
+
+            // Apply parallax effect based on camera position and angle
+            if (camera) {
+                const camPos = camera.getPosition();
+                // Stars move with camera movement (creating depth illusion)
+                starX += camPos.x * this.starParallaxFactor;
+                // Vertical parallax - stars move up when camera moves up
+                starY -= camPos.y * this.starParallaxFactor;
+
+                // Angle-based parallax - stars shift vertically based on camera pitch
+                // When camera tilts up (increasing angle), stars should move up
+                const angleDegrees = camPos.angle !== undefined ? camPos.angle : 45;
+                const angleOffset = (angleDegrees - 45) * 2; // Scale the angle effect
+                starY -= angleOffset * this.starParallaxFactor;
+
+                // Wrap stars horizontally to create infinite scrolling
+                starX = ((starX % ctx.canvas.width) + ctx.canvas.width) % ctx.canvas.width;
+            }
+
             // Skip stars at or below the cutoff
-            if (camera && star.y >= cutoffY) {
+            if (camera && starY >= cutoffY) {
                 return; // Skip this star
             }
 
@@ -155,9 +232,64 @@ export class Wallpaper {
             ctx.globalAlpha = star.brightness;
 
             // Draw star as a circle
-            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.arc(starX, starY, star.size, 0, Math.PI * 2);
             ctx.fill();
         });
+
+        // Draw the sun AFTER stars (foreground layer) with parallax
+        if (this.sunEnabled && this.sunLoaded && this.sunImage) {
+            // Calculate sun position with parallax
+            let sunX = this.sunBaseX * ctx.canvas.width;
+            let sunY = this.sunBaseY * ctx.canvas.height;
+
+            // Apply parallax effect based on camera position and angle
+            if (camera) {
+                const camPos = camera.getPosition();
+                // Sun moves with camera movement (creating depth illusion)
+                // Horizontal parallax is half of vertical to reduce left-right movement
+                sunX += camPos.x * this.sunParallaxFactor * 0.5;
+                // Vertical parallax - sun moves up when camera moves up
+                sunY -= camPos.y * this.sunParallaxFactor;
+
+                // Angle-based parallax - sun shifts vertically based on camera pitch
+                // When camera tilts up (increasing angle), sun should move up
+                const angleDegrees = camPos.angle !== undefined ? camPos.angle : 45;
+                const angleOffset = (angleDegrees - 45) * 2; // Scale the angle effect
+                sunY -= angleOffset * this.sunParallaxFactor;
+            }
+
+            // Only draw sun if its center is above the horizon cutoff
+            // Skip if the sun center is at or below the cutoff line
+            if (camera && sunY >= cutoffY) {
+                // Sun is below horizon, skip drawing
+            } else {
+                ctx.save();
+
+                // Clip to horizon if needed
+                if (camera && cutoffY < ctx.canvas.height) {
+                    ctx.beginPath();
+                    ctx.rect(0, 0, ctx.canvas.width, cutoffY);
+                    ctx.clip();
+                }
+
+                // Apply glow effect
+                if (this.sunGlow > 0) {
+                    ctx.shadowBlur = this.sunGlow;
+                    ctx.shadowColor = '#ffaa00'; // Orange glow
+                }
+
+                // Draw sun image centered at calculated position
+                ctx.drawImage(
+                    this.sunImage,
+                    sunX - this.sunSize / 2,
+                    sunY - this.sunSize / 2,
+                    this.sunSize,
+                    this.sunSize
+                );
+
+                ctx.restore();
+            }
+        }
 
         // Restore context state
         ctx.restore();

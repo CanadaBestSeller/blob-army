@@ -204,6 +204,24 @@
         </div>
 
         <div class="control-section">
+            <h3>Sun</h3>
+            <div class="control-group">
+                <label>
+                    Size: <input type="range" id="sunSize" min="50" max="600" value="500" style="width: 120px;">
+                    <span id="sunSizeValue">500px</span>
+                </label>
+                <label>
+                    Glow: <input type="range" id="sunGlow" min="0" max="100" value="40" style="width: 120px;">
+                    <span id="sunGlowValue">40px</span>
+                </label>
+                <label>
+                    Parallax: <input type="range" id="sunParallax" min="0" max="50" value="15" style="width: 120px;">
+                    <span id="sunParallaxValue">0.15</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section">
             <h3>Horizon Debug Line</h3>
             <div class="control-group">
                 <label>
@@ -528,6 +546,34 @@
             const glowValue = parseInt(e.target.value);
             wallpaper.setGlowIntensity(glowValue);
             document.getElementById('starGlowValue').textContent = glowValue + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        // Sun controls
+        document.getElementById('sunSize').addEventListener('input', (e) => {
+            const sizeValue = parseInt(e.target.value);
+            wallpaper.setSunSize(sizeValue);
+            document.getElementById('sunSizeValue').textContent = sizeValue + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('sunGlow').addEventListener('input', (e) => {
+            const glowValue = parseInt(e.target.value);
+            wallpaper.setSunGlow(glowValue);
+            document.getElementById('sunGlowValue').textContent = glowValue + 'px';
+            if (!game.isRunning) {
+                game.render();
+            }
+        });
+
+        document.getElementById('sunParallax').addEventListener('input', (e) => {
+            const parallaxValue = parseInt(e.target.value) / 100; // Convert to 0-0.5 range
+            wallpaper.setSunParallaxFactor(parallaxValue);
+            document.getElementById('sunParallaxValue').textContent = parallaxValue.toFixed(2);
             if (!game.isRunning) {
                 game.render();
             }
