@@ -27,11 +27,10 @@ export class Camera {
      * @param {Object} target - Target object with x, y, z properties
      */
     followTarget(target) {
-        // Camera follows the player with a fixed offset
+        // Camera follows the player's X position (left/right)
         this.x = target.x;
-        // Keep camera at configured height
-        this.y = GameParameters.CAMERA_HEIGHT;
-        // Camera stays behind the player at a fixed distance
+        // Y position is NOT locked - user can control it freely with R/F keys
+        // Camera stays behind the player at a fixed distance (Z locked)
         this.z = target.z - this.distance;
     }
 

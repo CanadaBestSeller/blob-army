@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Loop & World Scrolling Test - Task 7</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            font-family: 'Mulish', sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .info {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #aaaaaa;
+        }
+
+        #testCanvas {
+            border: 2px solid #4a4a6a;
+            background: #2d2d44;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #00ff88;
+            border: none;
+            border-radius: 4px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #00dd77;
+        }
+    </style>
+</head>
+<body>
+    <h1>Game Loop & World Scrolling Test - Task 7</h1>
+    <div class="info">
+        <p>Testing automatic world scrolling with Game class</p>
+        <p><strong>Arrow Keys:</strong> Move player left/right | <strong>R/F:</strong> Camera up/down | <strong>T/G:</strong> Camera pitch</p>
+    </div>
+
+    <canvas id="testCanvas" width="800" height="600"></canvas>
+
+    <div class="controls">
+        <button id="startGame">Start Game</button>
+        <button id="stopGame">Stop Game</button>
+        <button id="resetGame">Reset</button>
+    </div>
+
+    <script type="module">
+        import { Camera } from './rendering/Camera.js';
+        import { Renderer } from './rendering/Renderer.js';
+        import { Track } from './entities/Track.js';
+        import { Player } from './entities/Player.js';
+        import { InputManager } from './systems/InputManager.js';
+        import { Game } from './game/Game.js';
+
+        const canvas = document.getElementById('testCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Create input manager
+        const inputManager = new InputManager();
+
+        // Create camera behind the player
+        const camera = new Camera(0, 300, -200);
+
+        // Create renderer
+        const renderer = new Renderer(ctx, camera);
+
+        // Create game instance
+        const game = new Game(ctx, renderer, camera, inputManager);
+
+        // Create and add track
+        const track = new Track();
+        game.addEntity(track);
+
+        // Create and add player at origin
+        const player = new Player(0, 0.5, 0);
+        game.addEntity(player);
+
+        // Camera controls (using raw key tracking for camera, not InputManager)
+        const cameraSpeed = 400; // Increased for more responsive camera movement
+        const cameraPitchSpeed = 1.0; // Increased for faster pitch changes
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        // Override the game's update to include camera controls
+        const originalUpdate = game.update.bind(game);
+        game.update = function(deltaTime) {
+            // Apply camera controls BEFORE followTarget is called
+            // This way Y and pitch changes persist, while X/Z get overridden by followTarget
+
+            // Camera Y movement (R/F) - this will persist
+            if (keys['r']) camera.y += cameraSpeed * deltaTime;
+            if (keys['f']) camera.y -= cameraSpeed * deltaTime;
+
+            // Camera pitch (T/G) - this will persist
+            if (keys['t']) camera.setAngle(camera.angle + cameraPitchSpeed);
+            if (keys['g']) camera.setAngle(camera.angle - cameraPitchSpeed);
+
+            // Call original update (this calls followTarget which sets X and Z)
+            originalUpdate(deltaTime);
+        };
+
+        // Override the game's render to include HUD
+        const originalRender = game.render.bind(game);
+        game.render = function() {
+            // Call original render
+            originalRender();
+
+            // Draw HUD
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Mulish';
+            ctx.fillText(`Camera: X=${camera.x.toFixed(0)} Y=${camera.y.toFixed(0)} Z=${camera.z.toFixed(0)} Pitch=${camera.angle.toFixed(1)}°`, 10, 20);
+            ctx.fillText(`Player: X=${player.x.toFixed(1)} Y=${player.y.toFixed(1)} Z=${player.z.toFixed(1)}`, 10, 40);
+            ctx.fillText(`Distance: ${game.getDistanceInMeters().toFixed(1)} m`, 10, 60);
+            ctx.fillText(`Blob Count: ${player.getBlobCount()}`, 10, 80);
+            ctx.fillText('Arrow Keys: Player L/R | R/F: Cam Y | T/G: Pitch', 10, 100);
+        };
+
+        // Button handlers
+        document.getElementById('startGame').addEventListener('click', () => {
+            game.start();
+            console.log('Game started via button');
+        });
+
+        document.getElementById('stopGame').addEventListener('click', () => {
+            game.stop();
+            console.log('Game stopped via button');
+        });
+
+        document.getElementById('resetGame').addEventListener('click', () => {
+            game.reset();
+            player.setPosition(0, 0.5, 0);
+            console.log('Game reset');
+        });
+
+        console.log('Game Loop test initialized');
+        console.log('Game:', game);
+        console.log('Click "Start Game" to begin');
+    </script>
+</body>
+</html>

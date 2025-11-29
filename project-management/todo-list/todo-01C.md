@@ -179,10 +179,11 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 ---
 
-### **Task 7: Game Loop & World Scrolling** ⏳
+### **Task 7: Game Loop & World Scrolling** ✅
 
 **Files to create:**
 - `js/01C/game/Game.js`
+- `js/01C/test-game.html`
 
 **Implementation:**
 - Game class with:
@@ -191,18 +192,21 @@ This to-do list breaks down the implementation into modular, visually testable t
   - Entity update calls
   - Renderer integration
 - World scrolling:
-  - Increase all entity z positions each frame
-  - OR decrease camera z position
-  - Track distance traveled
+  - Move all entities forward with scrolling speed
+  - Camera follows player (X and Z locked, Y free for user control)
+  - Track distance traveled (in world units and meters)
+  - Smooth 60 FPS scrolling
+  - Camera-relative track rendering for stable geometry
 
 **Visual Test:**
 - Integrate Game.js with existing components
 - Track should scroll toward camera continuously
-- Player should stay at fixed z position (relative to camera)
+- Player should stay at fixed position on screen (racing game effect)
 - Scrolling should be smooth at 60 FPS
-- Console log should show increasing distance
+- Distance meter displayed in HUD
+- Camera Y and pitch controls work independently
 
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
 ---
 
@@ -440,8 +444,8 @@ This to-do list breaks down the implementation into modular, visually testable t
 ## Summary
 
 **Total Tasks:** 15
-**Completed:** 6
-**In Progress:** 0
-**Pending:** 9
+**Completed:** 7
+**In Visual QA:** 0
+**Pending:** 8
 
 **Estimated Completion:** TBD based on development velocity
