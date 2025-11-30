@@ -48,57 +48,76 @@
             position: fixed;
             top: 20px;
             left: 20px;
-            padding: 12px 20px;
-            background: rgba(26, 26, 46, 0.9);
-            border: 2px solid #4a4a6a;
-            border-radius: 8px;
+            height: 45px;
+            background: transparent;
+            border: none;
             color: #00ff88;
             text-decoration: none;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
+            padding: 0 5px;
+            transition: all 0.2s ease;
             z-index: 2000;
-            backdrop-filter: blur(10px);
             overflow: hidden;
             white-space: nowrap;
         }
 
         .portfolio-button:hover {
-            background: rgba(26, 26, 46, 0.95);
-            color: #00dd77;
-            border-color: #00ff88;
-            padding: 12px 24px;
+            padding: 0 12px;
+        }
+
+        .portfolio-button:active {
+            transform: scale(0.95);
         }
 
         .arrow {
-            font-size: 1.44rem;
+            font-size: 1.3rem;
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-left: 0.3em;
+            color: #00ff88;
+            text-shadow:
+                0 0 10px #00ff88,
+                0 0 20px #00ff88,
+                0 0 30px #00ff88,
+                0 0 40px #00ff88;
+            transition: all 0.2s ease;
+        }
+
+        .portfolio-button:hover .arrow {
+            text-shadow:
+                0 0 15px #00ff88,
+                0 0 30px #00ff88,
+                0 0 45px #00ff88,
+                0 0 60px #00ff88;
         }
 
         .button-text {
             max-width: 0;
             opacity: 0;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: max-width 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+            margin-left: 0;
+            color: #00ff88;
+            text-shadow:
+                0 0 10px #00ff88,
+                0 0 20px #00ff88;
         }
 
         .portfolio-button:hover .button-text {
             max-width: 200px;
             opacity: 1;
+            margin-left: 8px;
         }
 
         /* Debug UI */
         .debug-panel {
             position: fixed;
             top: 20px;
-            right: 20px;
+            right: 85px; /* Position to the left of control buttons */
             background: rgba(26, 26, 46, 0.9);
             padding: 20px;
             border-radius: 8px;
@@ -169,8 +188,148 @@
             border: none;
         }
 
-        button:hover {
-            background: #00dd77 !important;
+
+        /* Control Buttons */
+        .control-buttons {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1500;
+        }
+
+        .control-btn {
+            width: 45px;
+            height: 45px;
+            background: transparent;
+            border: none;
+            color: #00ff88;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn i {
+            text-shadow:
+                0 0 10px #00ff88,
+                0 0 20px #00ff88,
+                0 0 30px #00ff88,
+                0 0 40px #00ff88;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover i {
+            text-shadow:
+                0 0 15px #00ff88,
+                0 0 30px #00ff88,
+                0 0 45px #00ff88,
+                0 0 60px #00ff88;
+            transform: scale(1.1);
+        }
+
+        .control-btn:active i {
+            transform: scale(0.9);
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .control-buttons {
+                top: 10px;
+                right: 10px;
+            }
+
+            .debug-panel {
+                top: 10px;
+                right: 70px; /* Make room for control buttons */
+                left: 10px;
+                max-width: none;
+                padding: 15px;
+                font-size: 0.85rem;
+                max-height: calc(100vh - 20px);
+            }
+
+            .debug-panel h2 {
+                font-size: 1rem;
+                margin-bottom: 8px;
+            }
+
+            .debug-panel h3 {
+                font-size: 0.9rem;
+            }
+
+            .control-section {
+                margin-top: 15px;
+                padding-top: 15px;
+            }
+
+            .control-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+
+            .portfolio-button {
+                top: 10px;
+                left: 10px;
+                height: 40px;
+                padding: 0 5px;
+            }
+
+            .portfolio-button:hover {
+                padding: 0 10px;
+            }
+
+            .arrow {
+                font-size: 1.2rem;
+            }
+
+            .music-player {
+                bottom: 10px;
+                left: 10px;
+            }
+
+            .album-container {
+                width: 70px;
+                height: 70px;
+            }
+
+            .play-button {
+                width: 70px;
+                height: 70px;
+            }
+
+            .play-button i {
+                font-size: 1.8rem;
+            }
+
+            .album-artwork {
+                width: 70px;
+                height: 70px;
+            }
+
+            .now-playing {
+                width: 70px;
+                font-size: 0.65rem;
+            }
+
+            .volume-slider {
+                height: 80px;
+            }
+
+            /* Hide debug panel initially on mobile */
+            .debug-panel.mobile-hidden {
+                display: none;
+            }
+        }
+
+        /* Hide debug panel when toggled off */
+        .debug-panel.mobile-hidden {
+            display: none;
         }
 
         /* Music Player */
@@ -180,9 +339,15 @@
             left: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 10px;
+            align-items: flex-start;
+            gap: 8px;
             z-index: 2000;
+        }
+
+        .album-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
         }
 
         .volume-slider-container {
@@ -194,9 +359,13 @@
             flex-direction: column;
             align-items: center;
             gap: 8px;
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
         }
 
-        .music-player:hover .volume-slider-container {
+        .album-container:hover .volume-slider-container {
             opacity: 1;
             max-height: 150px;
         }
@@ -233,106 +402,110 @@
         }
 
         .play-button {
-            width: 50px;
-            height: 50px;
-            background: rgba(26, 26, 46, 0.9);
-            border: 2px solid #4a4a6a;
-            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+            opacity: 0;
         }
 
-        .play-button:hover {
-            background: rgba(26, 26, 46, 0.95);
-            border-color: #00ff88;
-            transform: scale(1.1);
+        .album-container:hover .play-button {
+            opacity: 1;
         }
 
         .play-button i {
             color: #00ff88;
-            font-size: 1.2rem;
+            font-size: 2rem;
+            text-shadow:
+                0 0 10px #00ff88,
+                0 0 20px #00ff88,
+                0 0 30px #00ff88,
+                0 0 40px #00ff88;
+            transition: all 0.2s ease;
+        }
+
+        .play-button:hover i {
+            text-shadow:
+                0 0 15px #00ff88,
+                0 0 30px #00ff88,
+                0 0 45px #00ff88,
+                0 0 60px #00ff88;
+            transform: scale(1.1);
+        }
+
+        .play-button:active i {
+            transform: scale(0.9);
+        }
+
+        .play-button.playing {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.4);
         }
 
         .play-button.playing i {
             color: #ff4444;
+            text-shadow:
+                0 0 10px #ff4444,
+                0 0 20px #ff4444,
+                0 0 30px #ff4444,
+                0 0 40px #ff4444;
         }
 
-        .somafm-credit {
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.5);
-            text-align: center;
-            margin-top: 4px;
-            font-weight: 400;
+        .play-button.playing:hover i {
+            text-shadow:
+                0 0 15px #ff4444,
+                0 0 30px #ff4444,
+                0 0 45px #ff4444,
+                0 0 60px #ff4444;
         }
 
-        .somafm-credit a {
-            color: rgba(0, 255, 136, 0.6);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .somafm-credit a:hover {
-            color: #00ff88;
+        .album-artwork {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            object-fit: cover;
+            display: block;
         }
 
         .now-playing {
             font-size: 0.7rem;
             color: rgba(255, 255, 255, 0.7);
-            text-align: center;
-            margin-bottom: 8px;
-            max-width: 200px;
+            width: 80px;
             line-height: 1.3;
-            opacity: 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: opacity 0.3s ease, max-height 0.3s ease, margin 0.3s ease;
-        }
-
-        .music-player.playing .now-playing {
-            opacity: 1;
-            max-height: 250px;
-            margin-bottom: 12px;
-        }
-
-        /* Show album artwork teaser on load */
-        .music-player.teaser .album-artwork {
-            opacity: 1;
-            display: block;
-        }
-
-        .music-player.teaser .now-playing {
-            opacity: 1;
-            max-height: 140px;
-            margin-bottom: 12px;
-        }
-
-        .music-player.teaser .song-title,
-        .music-player.teaser .song-artist {
-            display: none;
-        }
-
-        .album-artwork {
-            width: 120px;
-            height: 120px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(0, 255, 136, 0.3);
-            object-fit: cover;
         }
 
         .now-playing .song-title {
             font-weight: 700;
             color: #00ff88;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+            text-shadow:
+                0 0 5px #00ff88,
+                0 0 10px #00ff88;
         }
 
         .now-playing .song-artist {
             font-weight: 400;
             font-size: 0.65rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+            color: rgba(255, 255, 255, 0.6);
         }
     </style>
 </head>
@@ -352,20 +525,35 @@
 
     <!-- Music Player -->
     <div class="music-player" id="musicPlayerContainer">
-        <div class="volume-slider-container">
-            <input type="range" min="0" max="100" value="50" class="volume-slider" id="volumeSlider" orient="vertical">
+        <div class="album-container">
+            <div class="volume-slider-container">
+                <input type="range" min="0" max="100" value="50" class="volume-slider" id="volumeSlider" orient="vertical">
+            </div>
+            <img id="albumArtwork" class="album-artwork" src="" alt="Album artwork">
+            <div class="play-button" id="playButton">
+                <i class="fas fa-play"></i>
+            </div>
         </div>
         <div class="now-playing" id="nowPlaying">
-            <img id="albumArtwork" class="album-artwork" src="" alt="Album artwork" style="display: none;">
             <div class="song-title" id="songTitle">Loading...</div>
             <div class="song-artist" id="songArtist"></div>
         </div>
-        <div class="play-button" id="playButton">
+    </div>
+
+    <!-- Control Buttons (always visible) -->
+    <div class="control-buttons">
+        <button id="startGame" class="control-btn" title="Start Game">
             <i class="fas fa-play"></i>
-        </div>
-        <div class="somafm-credit">
-            <a href="https://plaza.one/" target="_blank" rel="noopener noreferrer">Nightwave Plaza</a>
-        </div>
+        </button>
+        <button id="stopGame" class="control-btn" title="Stop Game">
+            <i class="fas fa-stop"></i>
+        </button>
+        <button id="resetGame" class="control-btn" title="Reset">
+            <i class="fas fa-redo"></i>
+        </button>
+        <button id="toggleDebug" class="control-btn" title="Toggle Debug Panel">
+            <i class="fas fa-bug"></i>
+        </button>
     </div>
 
     <!-- Debug Panel -->
@@ -376,19 +564,6 @@
             <p><strong>Arrow Keys:</strong> Move player left/right<br>
             <strong>R/F:</strong> Camera up/down<br>
             <strong>T/G:</strong> Camera pitch</p>
-        </div>
-
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button id="startGame" style="padding: 10px 20px; background: #00ff88; border: none; border-radius: 4px; color: #1a1a2e; font-weight: bold; cursor: pointer;">Start Game</button>
-            <button id="stopGame" style="padding: 10px 20px; background: #00ff88; border: none; border-radius: 4px; color: #1a1a2e; font-weight: bold; cursor: pointer;">Stop Game</button>
-            <button id="resetGame" style="padding: 10px 20px; background: #00ff88; border: none; border-radius: 4px; color: #1a1a2e; font-weight: bold; cursor: pointer;">Reset</button>
-        </div>
-
-        <div style="margin-top: 15px;">
-            <label>
-                <input type="checkbox" id="hideHUD">
-                Hide HUD
-            </label>
         </div>
 
         <div class="control-section control-hideable">
@@ -536,6 +711,9 @@
         });
         renderer.setWallpaper(wallpaper);
 
+        // Store the base sun size for desktop
+        const baseSunSize = 600;
+
         // Function to resize canvas to full window
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -544,9 +722,48 @@
             // Resize wallpaper to match new canvas size
             wallpaper.resize(window.innerWidth, window.innerHeight);
 
+            // Scale sun size on mobile (below 768px)
+            if (window.innerWidth <= 768) {
+                const scaleFactor = window.innerWidth / 768;
+                const scaledSunSize = baseSunSize * scaleFactor;
+                wallpaper.setSunSize(scaledSunSize);
+            } else {
+                // Reset to base size on desktop
+                wallpaper.setSunSize(baseSunSize);
+            }
+
             // Trigger re-render after resize
             if (game && !game.isRunning) {
                 game.render();
+            }
+        }
+
+        // Function to adjust camera distance based on viewport height
+        function adjustCameraDistance() {
+            // Below 900px height, scale camera distance proportionally
+            // At 900px: distance = 133
+            // At 500px: distance = 250
+            if (window.innerHeight < 900) {
+                // Linear interpolation: at 500px -> 250, at 900px -> 133
+                const minHeight = 500;
+                const maxHeight = 900;
+                const minDistance = 250;
+                const maxDistance = 133;
+
+                const clampedHeight = Math.max(minHeight, Math.min(maxHeight, window.innerHeight));
+                const t = (clampedHeight - minHeight) / (maxHeight - minHeight);
+                camera.distance = minDistance + t * (maxDistance - minDistance);
+
+                // Update camera Z position relative to player
+                if (player && !game.isRunning) {
+                    camera.z = player.z - camera.distance;
+                }
+            } else {
+                // Reset to default distance for larger screens
+                camera.distance = 133;
+                if (player && !game.isRunning) {
+                    camera.z = player.z - camera.distance;
+                }
             }
         }
 
@@ -554,7 +771,10 @@
         resizeCanvas();
 
         // Handle window resize
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            adjustCameraDistance();
+        });
 
         // Create and add track
         const track = new Track();
@@ -563,6 +783,9 @@
         // Create and add player at origin
         const player = new Player(0, 0.5, 0);
         game.addEntity(player);
+
+        // Adjust camera distance based on viewport height (now that player exists)
+        adjustCameraDistance();
 
         // Manually spawn test gates at different distances
         const gate1 = new Gate(-100, 50, 500, 15);
@@ -859,12 +1082,19 @@
             if (!game.isRunning) game.render();
         });
 
-        // HUD visibility toggle
-        document.getElementById('hideHUD').addEventListener('change', (e) => {
-            const isHidden = e.target.checked;
-            window.HIDE_HUD = isHidden;
+        // Debug panel toggle
+        const debugPanel = document.querySelector('.debug-panel');
+        const controlSections = document.querySelectorAll('.control-hideable');
 
-            const controlSections = document.querySelectorAll('.control-hideable');
+        // Hide debug panel by default (both mobile and desktop)
+        debugPanel.classList.add('mobile-hidden');
+        controlSections.forEach(section => section.classList.add('hidden'));
+        window.HIDE_HUD = true;
+
+        document.getElementById('toggleDebug').addEventListener('click', () => {
+            debugPanel.classList.toggle('mobile-hidden');
+            const isHidden = debugPanel.classList.contains('mobile-hidden');
+
             controlSections.forEach(section => {
                 if (isHidden) {
                     section.classList.add('hidden');
@@ -873,6 +1103,7 @@
                 }
             });
 
+            window.HIDE_HUD = isHidden;
             if (!game.isRunning) game.render();
         });
 
@@ -925,8 +1156,6 @@
                 playIcon.classList.remove('fa-play');
                 playIcon.classList.add('fa-stop');
                 playButton.classList.add('playing');
-                musicPlayerContainer.classList.remove('teaser');
-                musicPlayerContainer.classList.add('playing');
 
                 // Start updating song info
                 updateNowPlaying();
@@ -937,8 +1166,6 @@
                 playIcon.classList.remove('fa-stop');
                 playIcon.classList.add('fa-play');
                 playButton.classList.remove('playing');
-                musicPlayerContainer.classList.remove('playing');
-                musicPlayerContainer.classList.add('teaser');
 
                 // Stop updating song info
                 if (updateInterval) {
@@ -952,27 +1179,22 @@
             audioElement.volume = e.target.value / 100;
         });
 
-        // Fetch initial album artwork as a teaser on page load
-        (async function initializeTeaser() {
+        // Fetch initial song info on page load
+        (async function initializeMusicPlayer() {
             try {
                 const response = await fetch('https://api.plaza.one/status');
                 const data = await response.json();
                 if (data.song) {
-                    // Load artwork for teaser
+                    // Load artwork
                     if (data.song.artwork_sm_src) {
                         albumArtwork.src = data.song.artwork_sm_src;
-                        albumArtwork.style.display = 'block';
                     } else if (data.song.artwork_src) {
                         albumArtwork.src = data.song.artwork_src;
-                        albumArtwork.style.display = 'block';
                     }
 
-                    // Store song info for when user starts playing
+                    // Display song info
                     songTitle.textContent = data.song.title;
                     songArtist.textContent = data.song.artist;
-
-                    // Show teaser (artwork only, no text)
-                    musicPlayerContainer.classList.add('teaser');
                 }
             } catch (error) {
                 console.error('Failed to fetch initial song info:', error);
