@@ -306,6 +306,15 @@
                 height: 70px;
             }
 
+            .album-placeholder {
+                width: 70px;
+                height: 70px;
+            }
+
+            .album-placeholder i {
+                font-size: 2rem;
+            }
+
             .now-playing {
                 width: 70px;
                 font-size: 0.65rem;
@@ -467,6 +476,33 @@
             display: block;
         }
 
+        .album-artwork[src=""],
+        .album-artwork:not([src]) {
+            display: none;
+        }
+
+        .album-placeholder {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            background: rgba(26, 26, 46, 0.8);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .album-placeholder i {
+            font-size: 2.5rem;
+            color: #00ff88;
+            opacity: 0.5;
+        }
+
+        .album-artwork[src]:not([src=""]) ~ .album-placeholder {
+            display: none;
+        }
+
         .now-playing {
             font-size: 0.7rem;
             color: rgba(255, 255, 255, 0.7);
@@ -518,6 +554,9 @@
                 <input type="range" min="0" max="100" value="50" class="volume-slider" id="volumeSlider" orient="vertical">
             </div>
             <img id="albumArtwork" class="album-artwork" src="" alt="Album artwork">
+            <div class="album-placeholder">
+                <i class="fas fa-music"></i>
+            </div>
             <div class="play-button" id="playButton">
                 <i class="fas fa-play"></i>
             </div>
@@ -1113,12 +1152,16 @@
         // Set initial volume
         audioElement.volume = volumeSlider.value / 100;
 
-        // Fetch current song from Nightwave Plaza API
+        // Fetch current song from Nightwave Plaza API (via CORS proxy)
         let updateInterval;
         async function updateNowPlaying() {
             try {
-                const response = await fetch('https://api.plaza.one/status');
-                const data = await response.json();
+                const apiUrl = 'https://api.plaza.one/status';
+                const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(apiUrl);
+                const response = await fetch(proxyUrl);
+                const proxyData = await response.json();
+                const data = JSON.parse(proxyData.contents);
+
                 if (data.song) {
                     songTitle.textContent = data.song.title;
                     songArtist.textContent = data.song.artist;
@@ -1126,10 +1169,8 @@
                     // Update artwork (use small version for better performance)
                     if (data.song.artwork_sm_src) {
                         albumArtwork.src = data.song.artwork_sm_src;
-                        albumArtwork.style.display = 'block';
                     } else if (data.song.artwork_src) {
                         albumArtwork.src = data.song.artwork_src;
-                        albumArtwork.style.display = 'block';
                     }
                 }
             } catch (error) {
@@ -1167,11 +1208,15 @@
             audioElement.volume = e.target.value / 100;
         });
 
-        // Fetch initial song info on page load
+        // Fetch initial song info on page load (via CORS proxy)
         (async function initializeMusicPlayer() {
             try {
-                const response = await fetch('https://api.plaza.one/status');
-                const data = await response.json();
+                const apiUrl = 'https://api.plaza.one/status';
+                const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(apiUrl);
+                const response = await fetch(proxyUrl);
+                const proxyData = await response.json();
+                const data = JSON.parse(proxyData.contents);
+
                 if (data.song) {
                     // Load artwork
                     if (data.song.artwork_sm_src) {
