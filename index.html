@@ -1092,14 +1092,14 @@
         // Function to adjust camera distance based on viewport height
         function adjustCameraDistance() {
             // Below 900px height, scale camera distance proportionally
-            // At 900px: distance = 133
-            // At 500px: distance = 250
+            // At 900px: distance = 267 (desktop)
+            // At 500px: distance = 410 (mobile)
             if (window.innerHeight < 900) {
-                // Linear interpolation: at 500px -> 250, at 900px -> 133
+                // Linear interpolation: at 500px -> 410, at 900px -> 267
                 const minHeight = 500;
                 const maxHeight = 900;
-                const minDistance = 350;
-                const maxDistance = 133;
+                const minDistance = 410;
+                const maxDistance = 267;
 
                 const clampedHeight = Math.max(minHeight, Math.min(maxHeight, window.innerHeight));
                 const t = (clampedHeight - minHeight) / (maxHeight - minHeight);
@@ -1111,7 +1111,7 @@
                 }
             } else {
                 // Reset to default distance for larger screens
-                camera.distance = 133;
+                camera.distance = 267;
                 if (player && !game.isRunning) {
                     camera.z = player.z - camera.distance;
                 }

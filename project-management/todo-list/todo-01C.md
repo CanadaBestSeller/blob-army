@@ -257,7 +257,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 ---
 
-### **Task 9: Gate Spawning System** 🧪
+### **Task 9: Gate Spawning System & Player Sprite** ✅
 
 **Files created:**
 - `js/01C/systems/ObstacleSpawner.js` - Generic obstacle queue management system
@@ -266,6 +266,9 @@ This to-do list breaks down the implementation into modular, visually testable t
 **Modifications:**
 - Updated `Game.js` to integrate spawner
 - Updated `index.html` to use ObstacleSpawner instead of manual gates
+- Updated `Player.js` to use sprite sheet animation instead of circle
+- Updated `index.html` camera distance settings (267 desktop, 410 mobile)
+- Updated `GameParameters.js` DEPTH_SCALE_FACTOR to 0.00009
 
 **Implementation:**
 - ObstacleSpawner with:
@@ -282,6 +285,13 @@ This to-do list breaks down the implementation into modular, visually testable t
   - Gates spawn 300 units ahead of player, spaced 200 units apart
   - Old gates removed automatically as player progresses
   - Spawner clears when entering PREPLAY state
+- Player sprite animation:
+  - Replaced circle rendering with Blue Slime sprite sheet (7-frame animation)
+  - Perspective-scaled sprite size (6x multiplier for visibility)
+  - 10 FPS animation speed for smooth bouncing effect
+  - Cyan glow effect (shadowBlur: 20px)
+  - Proper perspective scaling maintains 3D depth at all camera angles
+  - Camera distance: 267 units (desktop), 410 units (mobile ≤500px height)
 
 **Visual Test:**
 - Run game and click Play button
@@ -290,8 +300,11 @@ This to-do list breaks down the implementation into modular, visually testable t
 - As player moves forward and gates pass behind, new gates spawn in distance
 - HUD shows obstacle group count (should maintain 5 groups)
 - Gates should scroll toward camera naturally
+- Player displays as animated blue slime with cyan glow
+- Sprite scales correctly with perspective at all camera angles
+- Camera follows at appropriate distance on both desktop and mobile
 
-**Status:** 🧪 Ready for Visual QA
+**Status:** ✅ Complete
 
 ---
 
@@ -478,8 +491,8 @@ This to-do list breaks down the implementation into modular, visually testable t
 ## Summary
 
 **Total Tasks:** 15
-**Completed:** 8
-**In Visual QA:** 1
+**Completed:** 9
+**In Visual QA:** 0
 **Pending:** 6
 
 **Estimated Completion:** TBD based on development velocity

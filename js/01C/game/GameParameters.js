@@ -50,9 +50,9 @@ export const GameParameters = {
     // Camera & Projection
     CAMERA_ANGLE: 15, // degrees
     CAMERA_HEIGHT: 280, // Y position above ground
-    CAMERA_DISTANCE: 133, // Z distance behind player
+    CAMERA_DISTANCE: 267, // Z distance behind player
     PROJECTION_SCALE: 1.0, // base scale for projection
-    DEPTH_SCALE_FACTOR: 0.0005, // how much objects shrink with distance
+    DEPTH_SCALE_FACTOR: 0.00009, // how much objects shrink with distance
 
     // Visual
     DEPTH_SHADING_ENABLED: true,
