@@ -43,8 +43,9 @@ export class Gate extends Entity3D {
      * Draw gate as a rectangle with value text
      * @param {CanvasRenderingContext2D} ctx - Canvas context
      * @param {Camera} camera - Camera object
+     * @param {Object} gameState - Game state (optional)
      */
-    draw(ctx, camera) {
+    draw(ctx, camera, gameState = {}) {
         const camPos = camera.getPosition();
 
         // Calculate gate corners in 3D space
@@ -111,14 +112,31 @@ export class Gate extends Entity3D {
         const baseFontSize = 40;
         const fontSize = Math.max(12, baseFontSize * gateCenter.scale);
 
+        // Determine what text to display
+        const isPreplay = gameState.isPreplay || false;
+        let displayText;
+
+        if (isPreplay) {
+            displayText = 'Press Play';
+        } else {
+            // Format value with + or - sign
+            displayText = this.value >= 0 ? `+${this.value}` : `${this.value}`;
+        }
+
+        // Add text glow effect with Press Start 2P font
+        ctx.save();
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = GameParameters.COLOR_GATE_TEXT;
         ctx.fillStyle = GameParameters.COLOR_GATE_TEXT;
-        ctx.font = `bold ${fontSize}px Mulish`;
+        ctx.font = `${fontSize}px 'Press Start 2P', cursive`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Format value with + or - sign
-        const displayValue = this.value >= 0 ? `+${this.value}` : `${this.value}`;
-        ctx.fillText(displayValue, textX, textY);
+        // Draw text with multiple glow layers for stronger effect
+        ctx.fillText(displayText, textX, textY);
+        ctx.shadowBlur = 40;
+        ctx.fillText(displayText, textX, textY);
+        ctx.restore();
     }
 
     /**

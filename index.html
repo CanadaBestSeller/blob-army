@@ -1383,6 +1383,11 @@
 
         // Function to start playing (exit PREPLAY, enter PLAYING)
         function startPlayingGame() {
+            // Prevent multiple calls - check if already playing
+            if (game.state === 'PLAYING') {
+                return;
+            }
+
             // Hide play overlay
             playOverlay.classList.remove('active');
 
@@ -1394,6 +1399,9 @@
 
             // Show touch tutorial
             showTouchTutorial();
+
+            // Remove the click handler to prevent multiple activations
+            playButtonLarge.removeEventListener('click', startPlayingGame);
         }
 
         // Large Play button handler
