@@ -35,12 +35,9 @@ export class Wallpaper {
         this.mountainEnabled = options.mountainEnabled !== false; // Enabled by default
         this.mountainImage = null;
         this.mountainLoaded = false;
-        this.mountainWidth = options.mountainWidth || 1800; // Width in pixels (increased for visibility)
-        this.mountainHeight = options.mountainHeight || 614; // Height in pixels (calculated from 3000x1023 ratio: 1800 * (1023/3000) ≈ 614)
+        this.mountainAspectRatio = 3000 / 1023; // Original image aspect ratio (width/height)
         this.mountainGlow = options.mountainGlow || 150; // Glow blur radius (increased for visibility)
         this.mountainBaseX = options.mountainBaseX || 0.5; // Relative position (0-1, 0.5 = centered)
-        this.mountainBaseY = options.mountainBaseY || 0.40; // Relative position (0-1, closer to sun)
-        this.mountainYOffset = options.mountainYOffset || -50; // Vertical offset in pixels (negative = move up)
         this.mountainParallaxFactor = options.mountainParallaxFactor || 0.6; // More parallax than sun (increased from 0.5)
 
         // Galaxy/Aurora gradient settings
@@ -446,23 +443,36 @@ export class Wallpaper {
 
         // Draw the mountain AFTER sun (in front of sun) - with more parallax
         if (this.mountainEnabled && this.mountainLoaded && this.mountainImage) {
-            // Calculate mountain position (center point)
-            let mountainX = this.mountainBaseX * ctx.canvas.width;
-            let mountainY = this.mountainBaseY * ctx.canvas.height + this.mountainYOffset;
-            let mountainHalfWidth = this.mountainWidth / 2;
-            let mountainHalfHeight = this.mountainHeight / 2;
+            // Calculate mountain scale based on viewport width
+            // Mobile portrait (~400px): 2.0x (200%)
+            // Desktop (>1200px): 1.1x (110%)
+            // Linear interpolation between these points
+            let mountainScale;
+            if (ctx.canvas.width <= 400) {
+                mountainScale = 2.0;
+            } else if (ctx.canvas.width >= 1200) {
+                mountainScale = 1.1;
+            } else {
+                // Linear interpolation between 400px->2.0 and 1200px->1.1
+                const t = (ctx.canvas.width - 400) / (1200 - 400);
+                mountainScale = 2.0 + t * (1.1 - 2.0);
+            }
 
-            // Apply parallax to mountain position (more than sun)
+            const mountainWidth = ctx.canvas.width * mountainScale;
+            const mountainHeight = mountainWidth / this.mountainAspectRatio;
+
+            // Position mountain so its bottom edge is at the horizon (cutoffY)
+            // The Y coordinate represents the bottom of the mountain
+            let mountainBottomY = cutoffY;
+            let mountainX = this.mountainBaseX * ctx.canvas.width;
+
+            // Apply horizontal parallax to mountain position
             if (camera) {
                 const camPos = camera.getPosition();
                 mountainX += camPos.x * this.mountainParallaxFactor * 0.5;
-                mountainY -= camPos.y * this.mountainParallaxFactor;
-                const angleDegrees = camPos.angle !== undefined ? camPos.angle : 45;
-                const angleOffset = (angleDegrees - 45) * 2;
-                mountainY -= angleOffset * this.mountainParallaxFactor;
             }
 
-            // Draw the mountain (always draw for now, clipping will handle horizon)
+            // Draw the mountain
             ctx.save();
 
             // Clip to horizon if needed
@@ -478,13 +488,15 @@ export class Wallpaper {
                 ctx.shadowColor = '#4060ff'; // More blue glow
             }
 
-            // Draw mountain image centered at calculated position
+            // Draw mountain image with bottom edge at horizon
+            // drawImage parameters: image, x, y, width, height
+            // We want bottom at mountainBottomY, so top is at mountainBottomY - mountainHeight
             ctx.drawImage(
                 this.mountainImage,
-                mountainX - mountainHalfWidth,
-                mountainY - mountainHalfHeight,
-                this.mountainWidth,
-                this.mountainHeight
+                mountainX - (mountainWidth / 2),
+                mountainBottomY - mountainHeight,
+                mountainWidth,
+                mountainHeight
             );
 
             ctx.restore();
