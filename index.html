@@ -14,7 +14,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
@@ -230,106 +230,6 @@
             transform: scale(0.9);
         }
 
-        /* Mobile Optimizations */
-        @media (max-width: 768px) {
-            .control-buttons {
-                top: 10px;
-                right: 10px;
-            }
-
-            .debug-panel {
-                top: 10px;
-                right: 70px; /* Make room for control buttons */
-                left: 10px;
-                max-width: none;
-                padding: 15px;
-                font-size: 0.85rem;
-                max-height: calc(100vh - 20px);
-            }
-
-            .debug-panel h2 {
-                font-size: 1rem;
-                margin-bottom: 8px;
-            }
-
-            .debug-panel h3 {
-                font-size: 0.9rem;
-            }
-
-            .control-section {
-                margin-top: 15px;
-                padding-top: 15px;
-            }
-
-            .control-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 1.2rem;
-            }
-
-            .portfolio-button {
-                top: 10px;
-                left: 10px;
-                height: 40px;
-                padding: 0 5px;
-            }
-
-            .portfolio-button:hover {
-                padding: 0 10px;
-            }
-
-            .arrow {
-                font-size: 1.2rem;
-            }
-
-            .music-player {
-                bottom: 10px;
-                left: 10px;
-            }
-
-            .album-container {
-                width: 70px;
-                height: 70px;
-            }
-
-            .play-button {
-                width: 70px;
-                height: 70px;
-            }
-
-            .play-button i {
-                font-size: 1.8rem;
-            }
-
-            .album-artwork {
-                width: 70px;
-                height: 70px;
-            }
-
-            .album-placeholder {
-                width: 70px;
-                height: 70px;
-            }
-
-            .album-placeholder i {
-                font-size: 2rem;
-            }
-
-            .now-playing {
-                width: 70px;
-                font-size: 0.65rem;
-            }
-
-            .volume-slider {
-                height: 80px;
-            }
-
-            /* Hide debug panel initially on mobile */
-            .debug-panel.mobile-hidden {
-                display: none;
-            }
-        }
-
         /* Hide debug panel when toggled off */
         .debug-panel.mobile-hidden {
             display: none;
@@ -341,7 +241,7 @@
             bottom: 20px;
             left: 20px;
             display: flex;
-            flex-direction: column;
+            flex-direction: column-reverse;
             align-items: flex-start;
             gap: 8px;
             z-index: 2000;
@@ -470,8 +370,11 @@
             width: 80px;
             height: 80px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(0, 255, 136, 0.3);
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.5),
+                0 0 12px rgba(255, 255, 255, 0.8),
+                0 0 24px rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.8);
             object-fit: cover;
             display: block;
         }
@@ -486,11 +389,14 @@
             height: 80px;
             border-radius: 8px;
             background: rgba(26, 26, 46, 0.8);
-            border: 2px solid rgba(0, 255, 136, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.5),
+                0 0 12px rgba(255, 255, 255, 0.4),
+                0 0 24px rgba(255, 255, 255, 0.4);
         }
 
         .album-placeholder i {
@@ -531,6 +437,296 @@
             width: 100%;
             color: rgba(255, 255, 255, 0.6);
         }
+
+        /* Distance Counter */
+        .distance-counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 3rem;
+            font-weight: 400;
+            color: #ffffff;
+            text-shadow:
+                0 0 1px #ffffff,
+                0 0 20px #ffffff,
+                0 0 30px #ffffff,
+                0 0 40px #ffffff;
+            z-index: 2000;
+            font-family: 'Press Start 2P', cursive;
+            font-style: italic;
+            pointer-events: none;
+            user-select: none;
+            letter-spacing: 0.1rem;
+        }
+
+        .distance-counter .unit {
+            font-size: 1.5rem;
+            margin-left: 0.3rem;
+            font-style: italic;
+        }
+
+        /* Touch Control Tutorial */
+        .touch-tutorial {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .touch-tutorial.active {
+            opacity: 1;
+        }
+
+        .touch-zone {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow:
+                inset 0 0 20px rgba(255, 255, 255, 0.3),
+                0 0 30px rgba(255, 255, 255, 0.5);
+            animation: pulse 0.8s ease-in-out infinite;
+        }
+
+        .touch-zone-left {
+            left: 0;
+            border-right: none;
+        }
+
+        .touch-zone-right {
+            right: 0;
+            border-left: none;
+        }
+
+        .touch-zone-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .touch-zone-arrow {
+            font-size: 3rem;
+            color: #ffffff;
+            text-shadow:
+                0 0 10px #ffffff,
+                0 0 20px #ffffff,
+                0 0 30px #ffffff;
+            font-family: 'Press Start 2P', cursive;
+            font-style: italic;
+        }
+
+        .touch-zone-text {
+            font-size: 0.9rem;
+            color: #ffffff;
+            text-shadow:
+                0 0 5px #ffffff,
+                0 0 10px #ffffff;
+            font-family: 'Press Start 2P', cursive;
+            text-align: center;
+            line-height: 1.5;
+            max-width: 200px;
+        }
+
+        @media (max-width: 768px) {
+            .touch-zone-arrow {
+                font-size: 2.5rem;
+            }
+
+            .touch-zone-text {
+                font-size: 0.7rem;
+                max-width: 150px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .touch-zone-arrow {
+                font-size: 2rem;
+            }
+
+            .touch-zone-text {
+                font-size: 0.6rem;
+                max-width: 120px;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.6;
+                box-shadow:
+                    inset 0 0 20px rgba(255, 255, 255, 0.3),
+                    0 0 30px rgba(255, 255, 255, 0.5);
+            }
+            50% {
+                opacity: 1;
+                box-shadow:
+                    inset 0 0 40px rgba(255, 255, 255, 0.6),
+                    0 0 60px rgba(255, 255, 255, 0.8);
+            }
+        }
+
+        /* Responsive styles - must come AFTER all base styles */
+        @media (max-width: 768px) {
+            .control-buttons {
+                top: 10px;
+                right: 10px;
+            }
+
+            .debug-panel {
+                top: 10px;
+                right: 70px;
+                left: 10px;
+                max-width: none;
+                padding: 15px;
+                font-size: 0.85rem;
+                max-height: calc(100vh - 20px);
+            }
+
+            .debug-panel h2 {
+                font-size: 1rem;
+                margin-bottom: 8px;
+            }
+
+            .debug-panel h3 {
+                font-size: 0.9rem;
+            }
+
+            .control-section {
+                margin-top: 15px;
+                padding-top: 15px;
+            }
+
+            .control-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+
+            .portfolio-button {
+                top: 10px;
+                left: 10px;
+                height: 40px;
+                padding: 0 5px;
+            }
+
+            .portfolio-button:hover {
+                padding: 0 10px;
+            }
+
+            .arrow {
+                font-size: 1.2rem;
+            }
+
+            .music-player {
+                bottom: 10px;
+                left: 10px;
+            }
+
+            .album-container {
+                width: 70px !important;
+                height: 70px !important;
+            }
+
+            .play-button {
+                width: 70px !important;
+                height: 70px !important;
+            }
+
+            .play-button i {
+                font-size: 1.8rem !important;
+            }
+
+            .album-artwork {
+                width: 70px !important;
+                height: 70px !important;
+            }
+
+            .album-placeholder {
+                width: 70px !important;
+                height: 70px !important;
+            }
+
+            .album-placeholder i {
+                font-size: 2rem !important;
+            }
+
+            .now-playing {
+                width: 70px !important;
+                font-size: 0.65rem !important;
+            }
+
+            .volume-slider {
+                height: 80px !important;
+            }
+
+            .distance-counter {
+                bottom: 10px;
+                right: 10px;
+                font-size: 2rem;
+            }
+
+            .distance-counter .unit {
+                font-size: 1rem;
+            }
+
+            .debug-panel.mobile-hidden {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .music-player {
+                bottom: 8px;
+                left: 8px;
+            }
+
+            .album-container {
+                width: 60px !important;
+                height: 60px !important;
+            }
+
+            .play-button {
+                width: 60px !important;
+                height: 60px !important;
+            }
+
+            .play-button i {
+                font-size: 1.5rem !important;
+            }
+
+            .album-artwork {
+                width: 60px !important;
+                height: 60px !important;
+            }
+
+            .album-placeholder {
+                width: 60px !important;
+                height: 60px !important;
+            }
+
+            .album-placeholder i {
+                font-size: 1.7rem !important;
+            }
+
+            .now-playing {
+                width: 60px !important;
+                font-size: 0.6rem !important;
+            }
+
+            .volume-slider {
+                height: 70px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -564,6 +760,27 @@
         <div class="now-playing" id="nowPlaying">
             <div class="song-title" id="songTitle">Loading...</div>
             <div class="song-artist" id="songArtist"></div>
+        </div>
+    </div>
+
+    <!-- Distance Counter -->
+    <div class="distance-counter" id="distanceCounter">
+        <span id="distanceValue">0</span><span class="unit">m</span>
+    </div>
+
+    <!-- Touch Control Tutorial -->
+    <div class="touch-tutorial" id="touchTutorial">
+        <div class="touch-zone touch-zone-left">
+            <div class="touch-zone-label">
+                <div class="touch-zone-arrow">←</div>
+                <div class="touch-zone-text">tap or<br>left arrow</div>
+            </div>
+        </div>
+        <div class="touch-zone touch-zone-right">
+            <div class="touch-zone-label">
+                <div class="touch-zone-arrow">→</div>
+                <div class="touch-zone-text">tap or<br>right arrow</div>
+            </div>
         </div>
     </div>
 
@@ -774,7 +991,7 @@
                 // Linear interpolation: at 500px -> 250, at 900px -> 133
                 const minHeight = 500;
                 const maxHeight = 900;
-                const minDistance = 250;
+                const minDistance = 350;
                 const maxDistance = 133;
 
                 const clampedHeight = Math.max(minHeight, Math.min(maxHeight, window.innerHeight));
@@ -899,6 +1116,10 @@
         game.render = function() {
             originalRender();
 
+            // Update distance counter
+            const distanceValue = document.getElementById('distanceValue');
+            distanceValue.textContent = Math.floor(game.getDistanceInMeters());
+
             // Draw HUD
             if (!window.HIDE_HUD) {
                 ctx.save();
@@ -960,9 +1181,95 @@
         }
         updateGateOpacity();
 
+        // Touch control setup
+        let touchTutorialShown = false;
+        const touchTutorial = document.getElementById('touchTutorial');
+
+        // Touch control handler
+        let activeTouchSide = null;
+
+        function updateTouchControl(touch) {
+            const screenWidth = window.innerWidth;
+            const newSide = touch.clientX < screenWidth / 2 ? 'left' : 'right';
+
+            // If switching sides, release old side and press new side
+            if (activeTouchSide !== newSide) {
+                // Release previous side
+                if (activeTouchSide === 'left') {
+                    inputManager.keys['arrowleft'] = false;
+                } else if (activeTouchSide === 'right') {
+                    inputManager.keys['arrowright'] = false;
+                }
+
+                // Press new side
+                activeTouchSide = newSide;
+                if (newSide === 'left') {
+                    inputManager.keys['arrowleft'] = true;
+                } else {
+                    inputManager.keys['arrowright'] = true;
+                }
+            }
+        }
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            updateTouchControl(touch);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            updateTouchControl(touch);
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            // Release the active key
+            if (activeTouchSide === 'left') {
+                inputManager.keys['arrowleft'] = false;
+            } else if (activeTouchSide === 'right') {
+                inputManager.keys['arrowright'] = false;
+            }
+            activeTouchSide = null;
+        });
+
+        canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            // Release the active key
+            if (activeTouchSide === 'left') {
+                inputManager.keys['arrowleft'] = false;
+            } else if (activeTouchSide === 'right') {
+                inputManager.keys['arrowright'] = false;
+            }
+            activeTouchSide = null;
+        });
+
+        // Show touch tutorial
+        function showTouchTutorial() {
+            if (touchTutorialShown) return;
+            touchTutorialShown = true;
+
+            touchTutorial.classList.add('active');
+
+            // Flash 3 times, then fade out
+            let flashCount = 0;
+            const flashInterval = setInterval(() => {
+                flashCount++;
+                if (flashCount >= 6) { // 3 complete pulses (on + off = 2 counts each)
+                    clearInterval(flashInterval);
+                    setTimeout(() => {
+                        touchTutorial.classList.remove('active');
+                    }, 400);
+                }
+            }, 800);
+        }
+
         // Button handlers
         document.getElementById('startGame').addEventListener('click', () => {
             game.start();
+            // Show tutorial when game starts (all viewports)
+            showTouchTutorial();
         });
 
         document.getElementById('stopGame').addEventListener('click', () => {
