@@ -21,6 +21,7 @@ export class Game {
 
         // Game state
         this.running = false;
+        this.state = 'PREPLAY'; // PREPLAY, PLAYING
         this.lastTime = 0;
         this.distanceTraveled = 0; // In world units
 
@@ -173,5 +174,42 @@ export class Game {
         this.distanceTraveled = 0;
         this.camera.setPosition(0, GameParameters.CAMERA_HEIGHT, 0);
         console.log('Game reset');
+    }
+
+    /**
+     * Check if in PREPLAY state
+     * @returns {boolean}
+     */
+    get isPreplay() {
+        return this.state === 'PREPLAY';
+    }
+
+    /**
+     * Check if running (for backwards compatibility)
+     * @returns {boolean}
+     */
+    get isRunning() {
+        return this.running;
+    }
+
+    /**
+     * Start playing (exit PREPLAY state and start game)
+     */
+    startPlaying() {
+        this.state = 'PLAYING';
+        this.reset();
+        this.start();
+        console.log('Started playing');
+    }
+
+    /**
+     * Enter PREPLAY state
+     */
+    enterPreplay() {
+        this.state = 'PREPLAY';
+        this.stop();
+        this.reset();
+        this.start(); // Start the loop for scrolling
+        console.log('Entered PREPLAY state');
     }
 }

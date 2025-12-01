@@ -575,6 +575,103 @@
             }
         }
 
+        /* Play Button Overlay */
+        .play-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .play-overlay.active {
+            opacity: 1;
+        }
+
+        .play-button-large {
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 30px 60px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow:
+                inset 0 0 20px rgba(255, 255, 255, 0.3),
+                0 0 30px rgba(255, 255, 255, 0.5);
+            animation: pulse 0.8s ease-in-out infinite;
+            pointer-events: all;
+        }
+
+        .play-button-large:hover {
+            transform: scale(1.05);
+            box-shadow:
+                inset 0 0 30px rgba(255, 255, 255, 0.5),
+                0 0 50px rgba(255, 255, 255, 0.7);
+        }
+
+        .play-button-large:active {
+            transform: scale(0.95);
+        }
+
+        .play-button-icon {
+            font-size: 3rem;
+            color: #ffffff;
+            text-shadow:
+                0 0 10px #ffffff,
+                0 0 20px #ffffff,
+                0 0 30px #ffffff;
+        }
+
+        .play-button-text {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow:
+                0 0 10px #ffffff,
+                0 0 20px #ffffff;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        @media (max-width: 768px) {
+            .play-button-large {
+                padding: 25px 50px;
+                gap: 15px;
+            }
+
+            .play-button-icon {
+                font-size: 2.5rem;
+            }
+
+            .play-button-text {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .play-button-large {
+                padding: 20px 40px;
+                gap: 12px;
+            }
+
+            .play-button-icon {
+                font-size: 2rem;
+            }
+
+            .play-button-text {
+                font-size: 1.2rem;
+            }
+        }
+
         /* Responsive styles - must come AFTER all base styles */
         @media (max-width: 768px) {
             .control-buttons {
@@ -781,6 +878,14 @@
                 <div class="touch-zone-arrow">→</div>
                 <div class="touch-zone-text">tap or<br>right arrow</div>
             </div>
+        </div>
+    </div>
+
+    <!-- Play Button Overlay -->
+    <div class="play-overlay" id="playOverlay">
+        <div class="play-button-large" id="playButtonLarge">
+            <i class="fas fa-play play-button-icon"></i>
+            <div class="play-button-text">Play</div>
         </div>
     </div>
 
@@ -1031,21 +1136,30 @@
         // Adjust camera distance based on viewport height (now that player exists)
         adjustCameraDistance();
 
-        // Manually spawn test gates at different distances
+        // Create gates (but don't add them yet - only add in PLAYING state)
         const gate1 = new Gate(-100, 50, 500, 15);
         const gate2 = new Gate(100, 50, 500, -10);
-        game.addEntity(gate1);
-        game.addEntity(gate2);
-
         const gate3 = new Gate(-100, 50, 1000, -5);
         const gate4 = new Gate(100, 50, 1000, 20);
-        game.addEntity(gate3);
-        game.addEntity(gate4);
-
         const gate5 = new Gate(-100, 50, 1500, 8);
         const gate6 = new Gate(100, 50, 1500, -15);
-        game.addEntity(gate5);
-        game.addEntity(gate6);
+        const allGates = [gate1, gate2, gate3, gate4, gate5, gate6];
+
+        // Function to add all gates to the game
+        function addGates() {
+            allGates.forEach(gate => {
+                if (!game.entities.includes(gate)) {
+                    game.addEntity(gate);
+                }
+            });
+        }
+
+        // Function to remove all gates from the game
+        function removeGates() {
+            allGates.forEach(gate => {
+                game.removeEntity(gate);
+            });
+        }
 
         // Initialize gate color with oscillation
         window.GATE_COLOR = { r: 255, g: 255, b: 0, a: 0.35, baseOpacity: 0.35, oscillate: true };
@@ -1265,6 +1379,31 @@
             }, 800);
         }
 
+        // Get play overlay elements
+        const playOverlay = document.getElementById('playOverlay');
+        const playButtonLarge = document.getElementById('playButtonLarge');
+
+        // Function to start playing (exit PREPLAY, enter PLAYING)
+        function startPlayingGame() {
+            // Hide play overlay
+            playOverlay.classList.remove('active');
+
+            // Make player visible
+            player.visible = true;
+
+            // Add gates
+            addGates();
+
+            // Start the game
+            game.startPlaying();
+
+            // Show touch tutorial
+            showTouchTutorial();
+        }
+
+        // Large Play button handler
+        playButtonLarge.addEventListener('click', startPlayingGame);
+
         // Button handlers
         document.getElementById('startGame').addEventListener('click', () => {
             game.start();
@@ -1285,6 +1424,9 @@
             gate4.setPosition(100, 50, 1000);
             gate5.setPosition(-100, 50, 1500);
             gate6.setPosition(100, 50, 1500);
+
+            // Show touch tutorial on reset
+            showTouchTutorial();
         });
 
         // Gate color controls
@@ -1441,8 +1583,13 @@
             if (!game.isRunning) game.render();
         });
 
-        // Don't auto-start the game
-        console.log('Blob Army initialized');
+        // Initialize in PREPLAY state
+        player.visible = false; // Hide player initially
+        removeGates(); // Ensure gates are not present
+        game.enterPreplay(); // Start PREPLAY state (scrolling, but no player/gates)
+        playOverlay.classList.add('active'); // Show play button
+
+        console.log('Blob Army initialized in PREPLAY state');
         console.log('Use arrow keys to move, R/F for camera Y, T/G for camera pitch');
         console.log('Sun enabled:', wallpaper.sunEnabled, 'loaded:', wallpaper.sunLoaded);
         console.log('Mountain enabled:', wallpaper.mountainEnabled, 'loaded:', wallpaper.mountainLoaded);

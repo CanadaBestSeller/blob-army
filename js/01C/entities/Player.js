@@ -23,6 +23,7 @@ export class Player extends Entity3D {
         // Visual properties
         this.radius = 0.3; // Radius in world units
         this.color = this.generateRandomBrightColor();
+        this.visible = true; // Visibility flag
     }
 
     /**
@@ -78,6 +79,9 @@ export class Player extends Entity3D {
      * @param {Camera} camera - Camera object for projection
      */
     draw(ctx, camera) {
+        // Don't draw if not visible
+        if (!this.visible) return;
+
         // Project the player's 3D position to 2D screen coordinates
         const projected = project(this.x, this.y, this.z, camera.getPosition());
 
