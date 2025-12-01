@@ -111,15 +111,18 @@ export class Game {
         // Track distance traveled
         this.distanceTraveled += scrollSpeed * deltaTime;
 
+        // Get player reference
+        const player = this.entities.find(e => e.constructor.name === 'Player');
+
         // Create game state object for entities
         const gameState = {
             inputManager: this.inputManager,
             distanceTraveled: this.distanceTraveled,
-            scrollSpeed: scrollSpeed
+            scrollSpeed: scrollSpeed,
+            player: player
         };
 
         // Move player forward (not gates or track - they stay fixed in world space)
-        const player = this.entities.find(e => e.constructor.name === 'Player');
         if (player) {
             player.z += scrollSpeed * deltaTime;
         }
@@ -181,6 +184,14 @@ export class Game {
     reset() {
         this.distanceTraveled = 0;
         this.camera.setPosition(0, GameParameters.CAMERA_HEIGHT, 0);
+
+        // Reset all entities that have a reset method
+        this.entities.forEach(entity => {
+            if (entity.reset) {
+                entity.reset();
+            }
+        });
+
         console.log('Game reset');
     }
 

@@ -1424,7 +1424,8 @@
 
             // Reinitialize obstacle spawner if in PLAYING state
             if (game.state === 'PLAYING' && obstacleSpawner) {
-                obstacleSpawner.initialize();
+                obstacleSpawner.clear(); // Clear old obstacles first
+                obstacleSpawner.initialize(); // Then spawn new ones
             }
 
             // Show touch tutorial on reset

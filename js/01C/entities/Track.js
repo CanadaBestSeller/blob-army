@@ -14,15 +14,86 @@ export class Track extends Entity3D {
      */
     constructor() {
         super(0, 0, 0);
+
+        // Marker queue settings
+        this.maxMarkers = 50; // Keep 50 horizontal markers active
+        this.markerInterval = 1 / GameParameters.METERS_PER_PIXEL; // 1 meter between markers (100 world units)
+        this.cleanupDistance = 5 / GameParameters.METERS_PER_PIXEL; // 5 meters behind player (500 world units)
+
+        // Active markers queue (stores Z positions)
+        this.markerQueue = [];
+
+        // Next marker spawn Z position
+        this.nextMarkerZ = 0;
+
+        // Flag to track initialization
+        this.initialized = false;
     }
 
     /**
-     * Update track (not needed for static track)
+     * Update track - manage marker queue
      * @param {number} deltaTime - Time since last frame
      * @param {Object} gameState - Current game state
      */
     update(deltaTime, gameState) {
-        // Track is static, no update needed
+        // Get player position
+        const player = gameState.player || null;
+        if (!player) return;
+
+        // Initialize markers on first update
+        if (!this.initialized) {
+            this.initializeMarkers(player.z);
+            this.initialized = true;
+        }
+
+        // Update marker queue
+        this.updateMarkerQueue(player.z);
+    }
+
+    /**
+     * Initialize marker queue with initial markers
+     * @param {number} playerZ - Player's Z position
+     */
+    initializeMarkers(playerZ) {
+        // Start markers behind the player
+        this.nextMarkerZ = Math.floor(playerZ / this.markerInterval) * this.markerInterval - (5 * this.markerInterval);
+
+        // Spawn initial markers
+        for (let i = 0; i < this.maxMarkers; i++) {
+            this.markerQueue.push(this.nextMarkerZ);
+            this.nextMarkerZ += this.markerInterval;
+        }
+    }
+
+    /**
+     * Update marker queue - remove old markers and add new ones
+     * @param {number} playerZ - Player's Z position
+     */
+    updateMarkerQueue(playerZ) {
+        if (this.markerQueue.length === 0) return;
+
+        // Check if oldest marker is behind the player
+        const oldestMarkerZ = this.markerQueue[0];
+        const distanceBehindPlayer = playerZ - oldestMarkerZ;
+
+        // If marker is more than cleanupDistance behind player, remove it and spawn new one
+        if (distanceBehindPlayer > this.cleanupDistance) {
+            // Remove the oldest marker
+            this.markerQueue.shift();
+
+            // Add new marker at the end
+            this.markerQueue.push(this.nextMarkerZ);
+            this.nextMarkerZ += this.markerInterval;
+        }
+    }
+
+    /**
+     * Reset track markers (called when game resets)
+     */
+    reset() {
+        this.markerQueue = [];
+        this.nextMarkerZ = 0;
+        this.initialized = false;
     }
 
     /**
@@ -41,24 +112,26 @@ export class Track extends Entity3D {
     }
 
     /**
-     * Draw distance markers every 10 meters
+     * Draw distance markers from queue
      * @param {CanvasRenderingContext2D} ctx - Canvas context
      * @param {Camera} camera - Camera object
      * @param {Object} center - Canvas center point
      */
     drawDistanceMarkers(ctx, camera, center) {
-        const markerInterval = 100; // Every 100 units
         const camPos = camera.getPosition();
-        const cameraZ = camPos.z;
 
-        // Draw markers relative to camera position
-        const startZ = Math.floor(cameraZ / markerInterval) * markerInterval - 500;
-        const endZ = cameraZ + 5000;
+        // Get marker settings from global (if available) or use GameParameters
+        const markerSettings = window.MARKER_SETTINGS || {
+            color: '#BB00FF',
+            width: GameParameters.MARKER_WIDTH,
+            glow: GameParameters.MARKER_GLOW,
+            infinite: true
+        };
 
-        for (let z = startZ; z <= endZ; z += markerInterval) {
-            // Get marker settings from global (if available)
-            const markerSettings = window.MARKER_SETTINGS || { color: '#BB00FF', width: 1, glow: 8, infinite: true };
-
+        // Draw markers from furthest to closest for proper z-ordering
+        // Reverse iteration ensures closer markers render on top
+        for (let i = this.markerQueue.length - 1; i >= 0; i--) {
+            const z = this.markerQueue[i];
             // Determine horizontal line width (infinite or limited)
             const lineExtent = markerSettings.infinite ? 10000 : GameParameters.TRACK_WIDTH / 2;
             const leftX = -lineExtent;
@@ -97,7 +170,11 @@ export class Track extends Entity3D {
      * @param {Object} center - Canvas center point
      */
     drawZAxisMarker(ctx, camera, center) {
-        const zMarkerSettings = window.Z_MARKER_SETTINGS || { color: '#BB00FF', width: 2, glow: 8 };
+        const zMarkerSettings = window.Z_MARKER_SETTINGS || {
+            color: '#BB00FF',
+            width: GameParameters.Z_MARKER_WIDTH,
+            glow: GameParameters.Z_MARKER_GLOW
+        };
         const camPos = camera.getPosition();
 
         // Draw z-axis markers at x = -200, 0, and 200

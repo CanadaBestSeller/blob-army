@@ -27,6 +27,14 @@ export const GameParameters = {
     LANE_OFFSET: -100, // offset from center (Lane 1 at -100, Lane 2 at +100)
     TRACK_LENGTH: 2000, // visual length extending into distance
 
+    // Track Markers (Horizontal)
+    MARKER_GLOW: 30, // glow blur in pixels
+    MARKER_WIDTH: 1, // line width in pixels
+
+    // Z-Axis Markers (Vertical)
+    Z_MARKER_GLOW: 30, // glow blur in pixels
+    Z_MARKER_WIDTH: 5, // line width in pixels
+
     // Gates
     GATE_SPAWN_INTERVAL: 2000, // milliseconds between spawns
     GATE_SPAWN_DISTANCE: 1500, // Z distance where gates spawn (far away)
@@ -41,7 +49,7 @@ export const GameParameters = {
 
     // Camera & Projection
     CAMERA_ANGLE: 15, // degrees
-    CAMERA_HEIGHT: 200, // Y position above ground
+    CAMERA_HEIGHT: 280, // Y position above ground
     CAMERA_DISTANCE: 133, // Z distance behind player
     PROJECTION_SCALE: 1.0, // base scale for projection
     DEPTH_SCALE_FACTOR: 0.0005, // how much objects shrink with distance
