@@ -31,6 +31,18 @@ export class Wallpaper {
         this.sunBaseY = options.sunBaseY || 0.33; // Relative position (0-1, 0.33 = 33% from top)
         this.sunParallaxFactor = options.sunParallaxFactor || 0.3; // Parallax strength (increased for visibility)
 
+        // Mountain settings
+        this.mountainEnabled = options.mountainEnabled !== false; // Enabled by default
+        this.mountainImage = null;
+        this.mountainLoaded = false;
+        this.mountainWidth = options.mountainWidth || 1800; // Width in pixels (increased for visibility)
+        this.mountainHeight = options.mountainHeight || 614; // Height in pixels (calculated from 3000x1023 ratio: 1800 * (1023/3000) ≈ 614)
+        this.mountainGlow = options.mountainGlow || 150; // Glow blur radius (increased for visibility)
+        this.mountainBaseX = options.mountainBaseX || 0.5; // Relative position (0-1, 0.5 = centered)
+        this.mountainBaseY = options.mountainBaseY || 0.40; // Relative position (0-1, closer to sun)
+        this.mountainYOffset = options.mountainYOffset || -50; // Vertical offset in pixels (negative = move up)
+        this.mountainParallaxFactor = options.mountainParallaxFactor || 0.6; // More parallax than sun (increased from 0.5)
+
         // Galaxy/Aurora gradient settings
         this.galaxyEnabled = options.galaxyEnabled !== false; // Enabled by default
         this.galaxyLayers = this.generateGalaxyLayers();
@@ -39,6 +51,11 @@ export class Wallpaper {
         // Load sun image
         if (this.sunEnabled) {
             this.loadSunImage();
+        }
+
+        // Load mountain image
+        if (this.mountainEnabled) {
+            this.loadMountainImage();
         }
 
         // Generate stars
@@ -62,6 +79,25 @@ export class Wallpaper {
         // Use import.meta.url to create absolute path from module location
         this.sunImage.src = new URL('../assets/sun.png', import.meta.url).href;
         console.log('Loading sun image from:', this.sunImage.src);
+    }
+
+    /**
+     * Load the mountain image
+     */
+    loadMountainImage() {
+        this.mountainImage = new Image();
+        this.mountainImage.onload = () => {
+            this.mountainLoaded = true;
+            console.log('Mountain image loaded successfully');
+        };
+        this.mountainImage.onerror = (error) => {
+            console.error('Failed to load mountain image:', error);
+            console.error('Attempted path:', new URL('../assets/mountain.png', import.meta.url).href);
+            this.mountainEnabled = false;
+        };
+        // Use import.meta.url to create absolute path from module location
+        this.mountainImage.src = new URL('../assets/mountain.png', import.meta.url).href;
+        console.log('Loading mountain image from:', this.mountainImage.src);
     }
 
     /**
@@ -406,6 +442,52 @@ export class Wallpaper {
 
                 ctx.restore();
             }
+        }
+
+        // Draw the mountain AFTER sun (in front of sun) - with more parallax
+        if (this.mountainEnabled && this.mountainLoaded && this.mountainImage) {
+            // Calculate mountain position (center point)
+            let mountainX = this.mountainBaseX * ctx.canvas.width;
+            let mountainY = this.mountainBaseY * ctx.canvas.height + this.mountainYOffset;
+            let mountainHalfWidth = this.mountainWidth / 2;
+            let mountainHalfHeight = this.mountainHeight / 2;
+
+            // Apply parallax to mountain position (more than sun)
+            if (camera) {
+                const camPos = camera.getPosition();
+                mountainX += camPos.x * this.mountainParallaxFactor * 0.5;
+                mountainY -= camPos.y * this.mountainParallaxFactor;
+                const angleDegrees = camPos.angle !== undefined ? camPos.angle : 45;
+                const angleOffset = (angleDegrees - 45) * 2;
+                mountainY -= angleOffset * this.mountainParallaxFactor;
+            }
+
+            // Draw the mountain (always draw for now, clipping will handle horizon)
+            ctx.save();
+
+            // Clip to horizon if needed
+            if (camera && cutoffY < ctx.canvas.height) {
+                ctx.beginPath();
+                ctx.rect(0, 0, ctx.canvas.width, cutoffY);
+                ctx.clip();
+            }
+
+            // Apply glow effect
+            if (this.mountainGlow > 0) {
+                ctx.shadowBlur = this.mountainGlow;
+                ctx.shadowColor = '#4060ff'; // More blue glow
+            }
+
+            // Draw mountain image centered at calculated position
+            ctx.drawImage(
+                this.mountainImage,
+                mountainX - mountainHalfWidth,
+                mountainY - mountainHalfHeight,
+                this.mountainWidth,
+                this.mountainHeight
+            );
+
+            ctx.restore();
         }
 
         // Restore context state
