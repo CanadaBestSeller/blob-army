@@ -257,30 +257,41 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 ---
 
-### **Task 9: Gate Spawning System** ⏳
+### **Task 9: Gate Spawning System** 🧪
 
-**Files to create:**
-- `js/01C/systems/GateSpawner.js`
+**Files created:**
+- `js/01C/systems/ObstacleSpawner.js` - Generic obstacle queue management system
+- `js/01C/systems/GateGenerator.js` - Gate generation logic
 
 **Modifications:**
-- Update `Game.js` to integrate spawner
+- Updated `Game.js` to integrate spawner
+- Updated `index.html` to use ObstacleSpawner instead of manual gates
 
 **Implementation:**
-- GateSpawner with:
-  - Timer-based spawning (every 2 seconds)
+- ObstacleSpawner with:
+  - Queue-based system maintaining 5 groups of obstacles
+  - Automatic cleanup of obstacles 20 meters behind player
+  - Support for multiple obstacle types via generator functions
+  - Rolling queue that spawns new obstacles as old ones are removed
+- GateGenerator with:
   - Generate random gate values (-20 to +20)
   - Create pairs of gates (one per lane)
-  - Spawn at far z distance
-  - Add to game entities
+  - Reusable generator function for obstacle spawner
+- Game integration:
+  - Spawner initializes with 5 gate pairs when Play is clicked
+  - Gates spawn 300 units ahead of player, spaced 200 units apart
+  - Old gates removed automatically as player progresses
+  - Spawner clears when entering PREPLAY state
 
 **Visual Test:**
-- Run game with spawner enabled
-- Gates should appear automatically every 2 seconds
-- Always 2 gates per spawn (one in each lane)
-- Gates should have different random values
-- Gates should scroll toward camera and eventually pass player
+- Run game and click Play button
+- 5 pairs of gates (10 gates total) should appear immediately
+- Gates should have random values between -20 and +20
+- As player moves forward and gates pass behind, new gates spawn in distance
+- HUD shows obstacle group count (should maintain 5 groups)
+- Gates should scroll toward camera naturally
 
-**Status:** ⏳ Pending
+**Status:** 🧪 Ready for Visual QA
 
 ---
 
@@ -468,7 +479,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 **Total Tasks:** 15
 **Completed:** 8
-**In Visual QA:** 0
-**Pending:** 7
+**In Visual QA:** 1
+**Pending:** 6
 
 **Estimated Completion:** TBD based on development velocity

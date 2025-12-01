@@ -28,6 +28,9 @@ export class Game {
         // Entities (managed by renderer, but we track them here too)
         this.entities = [];
 
+        // Obstacle spawner (initialized later)
+        this.obstacleSpawner = null;
+
         // Bind the game loop
         this.gameLoop = this.gameLoop.bind(this);
     }
@@ -121,6 +124,11 @@ export class Game {
             player.z += scrollSpeed * deltaTime;
         }
 
+        // Update obstacle spawner (only in PLAYING state)
+        if (this.state === 'PLAYING' && this.obstacleSpawner) {
+            this.obstacleSpawner.update(deltaTime);
+        }
+
         // Update all entities
         this.entities.forEach(entity => {
             // Call entity's update method
@@ -198,6 +206,12 @@ export class Game {
     startPlaying() {
         this.state = 'PLAYING';
         this.reset();
+
+        // Initialize obstacle spawner
+        if (this.obstacleSpawner) {
+            this.obstacleSpawner.initialize();
+        }
+
         this.start();
         console.log('Started playing');
     }
@@ -209,7 +223,21 @@ export class Game {
         this.state = 'PREPLAY';
         this.stop();
         this.reset();
+
+        // Clear obstacle spawner
+        if (this.obstacleSpawner) {
+            this.obstacleSpawner.clear();
+        }
+
         this.start(); // Start the loop for scrolling
         console.log('Entered PREPLAY state');
+    }
+
+    /**
+     * Set the obstacle spawner
+     * @param {ObstacleSpawner} spawner - The obstacle spawner instance
+     */
+    setObstacleSpawner(spawner) {
+        this.obstacleSpawner = spawner;
     }
 }

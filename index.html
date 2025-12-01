@@ -1033,9 +1033,10 @@
         import { Wallpaper } from './js/01C/rendering/Wallpaper.js';
         import { Track } from './js/01C/entities/Track.js';
         import { Player } from './js/01C/entities/Player.js';
-        import { Gate } from './js/01C/entities/Gate.js';
         import { InputManager } from './js/01C/systems/InputManager.js';
         import { Game } from './js/01C/game/Game.js';
+        import { ObstacleSpawner } from './js/01C/systems/ObstacleSpawner.js';
+        import { GateGenerator } from './js/01C/systems/GateGenerator.js';
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -1137,30 +1138,16 @@
         // Adjust camera distance based on viewport height (now that player exists)
         adjustCameraDistance();
 
-        // Create gates (but don't add them yet - only add in PLAYING state)
-        const gate1 = new Gate(-100, 50, 500, 15);
-        const gate2 = new Gate(100, 50, 500, -10);
-        const gate3 = new Gate(-100, 50, 1000, -5);
-        const gate4 = new Gate(100, 50, 1000, 20);
-        const gate5 = new Gate(-100, 50, 1500, 8);
-        const gate6 = new Gate(100, 50, 1500, -15);
-        const allGates = [gate1, gate2, gate3, gate4, gate5, gate6];
+        // Create and configure obstacle spawner
+        const obstacleSpawner = new ObstacleSpawner(game);
 
-        // Function to add all gates to the game
-        function addGates() {
-            allGates.forEach(gate => {
-                if (!game.entities.includes(gate)) {
-                    game.addEntity(gate);
-                }
-            });
-        }
+        // Register gate generator
+        obstacleSpawner.registerGenerator((z) => {
+            return GateGenerator.generateGatePair(z);
+        }, 1); // Weight of 1 (only generator for now)
 
-        // Function to remove all gates from the game
-        function removeGates() {
-            allGates.forEach(gate => {
-                game.removeEntity(gate);
-            });
-        }
+        // Set spawner on game
+        game.setObstacleSpawner(obstacleSpawner);
 
         // Initialize gate color with oscillation
         window.GATE_COLOR = { r: 255, g: 255, b: 0, a: 0.35, baseOpacity: 0.35, oscillate: true };
@@ -1239,25 +1226,35 @@
             if (!window.HIDE_HUD) {
                 ctx.save();
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                ctx.fillRect(15, 15, 480, 160);
+                ctx.fillRect(15, 70, 480, 300);
 
                 ctx.fillStyle = '#fff';
                 ctx.font = '14px Mulish, sans-serif';
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'top';
                 const hudX = 25;
-                const hudY = 25;
+                const hudY = 85;
                 const lineHeight = 16;
 
                 ctx.fillText(`Camera: X=${camera.x.toFixed(0)} Y=${camera.y.toFixed(0)} Z=${camera.z.toFixed(0)} Pitch=${camera.angle.toFixed(1)}° Dist=${camera.distance.toFixed(0)}`, hudX, hudY);
                 ctx.fillText(`Player: X=${player.x.toFixed(1)} Y=${player.y.toFixed(1)} Z=${player.z.toFixed(1)}`, hudX, hudY + lineHeight);
                 ctx.fillText(`Distance: ${game.getDistanceInMeters().toFixed(1)} m`, hudX, hudY + lineHeight * 2);
                 ctx.fillText(`Blob Count: ${player.getBlobCount()}`, hudX, hudY + lineHeight * 3);
-                ctx.fillText('Gates at Z: 500, 1000, 1500', hudX, hudY + lineHeight * 4.5);
+
+                if (obstacleSpawner) {
+                    ctx.fillText(`Obstacle Groups: ${obstacleSpawner.getActiveGroupCount()} (${obstacleSpawner.getTotalObstacleCount()} total)`, hudX, hudY + lineHeight * 4.5);
+
+                    // Display queue state
+                    const queueState = obstacleSpawner.getQueueState();
+                    ctx.fillText(`Queue:`, hudX, hudY + lineHeight * 5.5);
+                    queueState.forEach((item, idx) => {
+                        ctx.fillText(`  [${idx}] Z=${item.spawnZ} (${item.distanceMeters}m) - ${item.obstacleCount} obstacles`, hudX, hudY + lineHeight * (6.5 + idx));
+                    });
+                }
 
                 if (wallpaper.debugInfo) {
                     const d = wallpaper.debugInfo;
-                    ctx.fillText(`Horizon: Y=${d.horizonScreenY.toFixed(1)} (Camera Y=${d.cameraY.toFixed(1)}) Canvas H=${d.canvasHeight}`, hudX, hudY + lineHeight * 6);
+                    ctx.fillText(`Horizon: Y=${d.horizonScreenY.toFixed(1)} (Camera Y=${d.cameraY.toFixed(1)}) Canvas H=${d.canvasHeight}`, hudX, hudY + lineHeight * 12);
                 }
 
                 ctx.restore();
@@ -1392,10 +1389,7 @@
             // Make player visible
             player.visible = true;
 
-            // Add gates
-            addGates();
-
-            // Start the game
+            // Start the game (this will initialize the obstacle spawner)
             game.startPlaying();
 
             // Show touch tutorial
@@ -1419,12 +1413,11 @@
         document.getElementById('resetGame').addEventListener('click', () => {
             game.reset();
             player.setPosition(0, 0.5, 0);
-            gate1.setPosition(-100, 50, 500);
-            gate2.setPosition(100, 50, 500);
-            gate3.setPosition(-100, 50, 1000);
-            gate4.setPosition(100, 50, 1000);
-            gate5.setPosition(-100, 50, 1500);
-            gate6.setPosition(100, 50, 1500);
+
+            // Reinitialize obstacle spawner if in PLAYING state
+            if (game.state === 'PLAYING' && obstacleSpawner) {
+                obstacleSpawner.initialize();
+            }
 
             // Show touch tutorial on reset
             showTouchTutorial();
@@ -1586,7 +1579,6 @@
 
         // Initialize in PREPLAY state
         player.visible = false; // Hide player initially
-        removeGates(); // Ensure gates are not present
         game.enterPreplay(); // Start PREPLAY state (scrolling, but no player/gates)
         playOverlay.classList.add('active'); // Show play button
 
