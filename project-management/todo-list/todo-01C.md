@@ -210,7 +210,7 @@ This to-do list breaks down the implementation into modular, visually testable t
 
 ---
 
-### **Task 8: Gate Entity** 🧪
+### **Task 8: Gate Entity** ✅
 
 **Files to create:**
 - `js/01C/entities/Gate.js`
@@ -219,6 +219,9 @@ This to-do list breaks down the implementation into modular, visually testable t
 **Files modified:**
 - `js/01C/rendering/Renderer.js` - Two-pass rendering (track background, then entities)
 - `js/01C/game/Game.js` - Only move player forward, not gates
+- `js/01C/rendering/Wallpaper.js` - Mountain width now responsive, bottom anchored to horizon
+- `js/01C/entities/Player.js` - Added visibility flag for PREPLAY state
+- `index.html` - Added PREPLAY state with centered Play button
 
 **Implementation:**
 - Gate class extending Entity3D:
@@ -231,6 +234,14 @@ This to-do list breaks down the implementation into modular, visually testable t
   - Scale based on depth
 - Fixed rendering layering: Two-pass system ensures gates always on top of track
 - Fixed gate movement: Gates stay at fixed Z positions, player moves forward
+- Added PREPLAY game state:
+  - Game scrolls on page load with invisible player and no gates
+  - Large centered "Play" button with pulsing animation
+  - Clicking Play button starts game, shows player, adds gates, and triggers touch tutorial
+- Mountain improvements:
+  - Width always matches viewport (responsive scaling: 200% on mobile ≤400px, 110% on desktop ≥1200px)
+  - Bottom edge automatically anchored to horizon line
+  - No manual Y positioning needed
 
 **Visual Test:**
 - Manually spawn 6 gates at far z distances (500, 1000, 1500) in test
@@ -239,8 +250,10 @@ This to-do list breaks down the implementation into modular, visually testable t
 - Gates should scale smaller when further away
 - Gates should remain at fixed positions and appear to move toward camera as player advances
 - Gates should always render on top of lane lines (not obscured)
+- Page loads in PREPLAY state with scrolling background and centered Play button
+- Mountain scales responsively and sits perfectly on horizon across all viewport sizes
 
-**Status:** 🧪 Ready for Visual QA
+**Status:** ✅ Complete
 
 ---
 
@@ -454,8 +467,8 @@ This to-do list breaks down the implementation into modular, visually testable t
 ## Summary
 
 **Total Tasks:** 15
-**Completed:** 7
-**In Visual QA:** 1
+**Completed:** 8
+**In Visual QA:** 0
 **Pending:** 7
 
 **Estimated Completion:** TBD based on development velocity
