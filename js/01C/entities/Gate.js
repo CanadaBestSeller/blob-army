@@ -13,13 +13,15 @@ export class Gate extends Entity3D {
      * @param {number} x - X position (lane position)
      * @param {number} y - Y position (height above ground)
      * @param {number} z - Z position (distance along track)
-     * @param {number} value - Gate value (positive or negative number)
+     * @param {number} value - Gate value (positive or negative number, or multiplier)
+     * @param {string} type - Gate type: 'addition' or 'multiplication' (default: 'addition')
      */
-    constructor(x, y, z, value) {
+    constructor(x, y, z, value, type = 'addition') {
         super(x, y, z);
 
         // Gate properties
         this.value = value;
+        this.type = type; // 'addition' or 'multiplication'
         this.width = GameParameters.GATE_WIDTH;
         this.height = GameParameters.GATE_HEIGHT;
 
@@ -119,8 +121,14 @@ export class Gate extends Entity3D {
         if (isPreplay) {
             displayText = 'Press Play';
         } else {
-            // Format value with + or - sign
-            displayText = this.value >= 0 ? `+${this.value}` : `${this.value}`;
+            // Format based on gate type
+            if (this.type === 'multiplication') {
+                // Format multiplier with × symbol as integer
+                displayText = `×${Math.floor(this.value)}`;
+            } else {
+                // Format addition with + or - sign (integer)
+                displayText = this.value >= 0 ? `+${Math.floor(this.value)}` : `${Math.floor(this.value)}`;
+            }
         }
 
         // Add text glow effect with Press Start 2P font

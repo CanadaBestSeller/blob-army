@@ -1036,7 +1036,8 @@
         import { InputManager } from './js/01C/systems/InputManager.js';
         import { Game } from './js/01C/game/Game.js';
         import { ObstacleSpawner } from './js/01C/systems/ObstacleSpawner.js';
-        import { GateGenerator } from './js/01C/systems/GateGenerator.js';
+        import { MathGateGenerator } from './js/01C/systems/MathGateGenerator.js';
+        import { ComputedValues } from './js/01C/game/GameParameters.js';
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -1141,9 +1142,11 @@
         // Create and configure obstacle spawner
         const obstacleSpawner = new ObstacleSpawner(game);
 
-        // Register gate generator
+        // Register math gate generator
         obstacleSpawner.registerGenerator((z) => {
-            return GateGenerator.generateGatePair(z);
+            const lanePositions = ComputedValues.LANE_POSITIONS;
+            const currentSwarmSize = player.getBlobCount();
+            return MathGateGenerator.generateMathGatePair(z, currentSwarmSize, lanePositions);
         }, 1); // Weight of 1 (only generator for now)
 
         // Set spawner on game

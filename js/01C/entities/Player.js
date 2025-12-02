@@ -166,6 +166,23 @@ export class Player extends Entity3D {
         );
 
         ctx.restore();
+
+        // Draw blob count below the sprite
+        const countFontSize = Math.max(12, scaledSize * 0.3); // Scale with sprite size
+        const countY = finalY + scaledSize / 2 + countFontSize; // Position below sprite
+
+        ctx.save();
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#00FFFF';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold ${countFontSize}px 'Press Start 2P', cursive`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        // Draw the blob count
+        ctx.fillText(this.blobCount.toString(), finalX, countY);
+
+        ctx.restore();
     }
 
     /**
