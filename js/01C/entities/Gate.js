@@ -109,8 +109,8 @@ export class Gate extends Entity3D {
         const textY = center.y - gateCenter.y;
 
         // Calculate font size based on distance (scale)
-        const baseFontSize = 40;
-        const fontSize = Math.max(12, baseFontSize * gateCenter.scale);
+        const baseFontSize = 35;
+        const fontSize = Math.max(8, baseFontSize * gateCenter.scale);
 
         // Determine what text to display
         const isPreplay = gameState.isPreplay || false;

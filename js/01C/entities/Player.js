@@ -146,7 +146,7 @@ export class Player extends Entity3D {
 
         // Apply perspective scaling to sprite size
         // Use the same scaling as the old circle player (radius * 50) for consistency
-        const scaledSize = this.radius * 50 * scale * 6; // 6x multiplier for larger sprite
+        const scaledSize = this.radius * 50 * scale * 12; // 12x multiplier for larger sprite
 
         // Add glow effect
         ctx.save();
