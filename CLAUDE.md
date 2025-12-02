@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Don't do visual testing. The user will perform visual testing.
 - When the implementation is complete, move the status to Visual QA. Don't mark it as done
 
-# This pository
+# This repository
 
 ## Project Overview
 
