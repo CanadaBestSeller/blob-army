@@ -1025,6 +1025,50 @@
                 </label>
             </div>
         </div>
+
+        <div class="control-section control-hideable">
+            <h3>Player Swarm</h3>
+            <div class="control-group">
+                <label>
+                    Depth Variation: <input type="range" id="swarmDepth" min="0" max="30" value="15" style="width: 120px;">
+                    <span id="swarmDepthValue">1.5</span>
+                </label>
+            </div>
+            <div class="control-group">
+                <label>
+                    Size Min: <input type="range" id="swarmSizeMin" min="10" max="100" value="10" style="width: 120px;">
+                    <span id="swarmSizeMinValue">0.10</span>
+                </label>
+                <label>
+                    Size Max: <input type="range" id="swarmSizeMax" min="100" max="300" value="100" style="width: 120px;">
+                    <span id="swarmSizeMaxValue">1.00</span>
+                </label>
+            </div>
+            <div class="control-group">
+                <label>
+                    Lag Factor: <input type="range" id="swarmLag" min="1" max="50" value="15" style="width: 120px;">
+                    <span id="swarmLagValue">0.15</span>
+                </label>
+            </div>
+            <div class="control-group">
+                <label>
+                    Spread Radius: <input type="range" id="swarmSpread" min="1" max="20" value="9" style="width: 120px;">
+                    <span id="swarmSpreadValue">0.9</span>
+                </label>
+            </div>
+            <div class="control-group">
+                <label>
+                    X-Spread Multiplier: <input type="range" id="swarmXSpreadMult" min="1" max="100" value="100" style="width: 120px;">
+                    <span id="swarmXSpreadMultValue">100</span>
+                </label>
+            </div>
+            <div class="control-group">
+                <label>
+                    Z-Spread Multiplier: <input type="range" id="swarmZSpreadMult" min="1" max="100" value="40" style="width: 120px;">
+                    <span id="swarmZSpreadMultValue">40</span>
+                </label>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -1134,6 +1178,10 @@
 
         // Create and add player at origin
         const player = new Player(0, 0.5, 0);
+        // Set initial blob count to 5 for swarm testing
+        player.blobCount = 5;
+        player.previousBlobCount = 5;
+        player.initializeSwarm();
         game.addEntity(player);
 
         // Adjust camera distance based on viewport height (now that player exists)
@@ -1163,6 +1211,17 @@
 
         // Initialize horizon debug line settings
         window.HORIZON_LINE_SETTINGS = { color: '#0400FF', width: 3, glow: 30 };
+
+        // Initialize swarm parameters
+        window.SWARM_PARAMS = {
+            depthVariation: 1.5,
+            sizeVariationMin: 0.1,
+            sizeVariationMax: 1.0,
+            lagFactor: 0.15,
+            spreadRadius: 0.9,
+            xSpreadMultiplier: 100,
+            zSpreadMultiplier: 40
+        };
 
         // Initialize HUD visibility
         window.HIDE_HUD = false;
@@ -1561,6 +1620,55 @@
         document.getElementById('horizonGlow').addEventListener('input', (e) => {
             window.HORIZON_LINE_SETTINGS.glow = parseInt(e.target.value);
             document.getElementById('horizonGlowValue').textContent = e.target.value + 'px';
+            if (!game.isRunning) game.render();
+        });
+
+        // Swarm parameter controls
+        document.getElementById('swarmDepth').addEventListener('input', (e) => {
+            window.SWARM_PARAMS.depthVariation = parseInt(e.target.value) / 10;
+            document.getElementById('swarmDepthValue').textContent = (parseInt(e.target.value) / 10).toFixed(1);
+            player.initializeSwarm();
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('swarmSizeMin').addEventListener('input', (e) => {
+            window.SWARM_PARAMS.sizeVariationMin = parseInt(e.target.value) / 100;
+            document.getElementById('swarmSizeMinValue').textContent = (parseInt(e.target.value) / 100).toFixed(2);
+            player.initializeSwarm();
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('swarmSizeMax').addEventListener('input', (e) => {
+            window.SWARM_PARAMS.sizeVariationMax = parseInt(e.target.value) / 100;
+            document.getElementById('swarmSizeMaxValue').textContent = (parseInt(e.target.value) / 100).toFixed(2);
+            player.initializeSwarm();
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('swarmLag').addEventListener('input', (e) => {
+            window.SWARM_PARAMS.lagFactor = parseInt(e.target.value) / 100;
+            document.getElementById('swarmLagValue').textContent = (parseInt(e.target.value) / 100).toFixed(2);
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('swarmSpread').addEventListener('input', (e) => {
+            window.SWARM_PARAMS.spreadRadius = parseInt(e.target.value) / 10;
+            document.getElementById('swarmSpreadValue').textContent = (parseInt(e.target.value) / 10).toFixed(1);
+            player.initializeSwarm();
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('swarmXSpreadMult').addEventListener('input', (e) => {
+            window.SWARM_PARAMS.xSpreadMultiplier = parseInt(e.target.value);
+            document.getElementById('swarmXSpreadMultValue').textContent = e.target.value;
+            player.initializeSwarm();
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('swarmZSpreadMult').addEventListener('input', (e) => {
+            window.SWARM_PARAMS.zSpreadMultiplier = parseInt(e.target.value);
+            document.getElementById('swarmZSpreadMultValue').textContent = e.target.value;
+            player.initializeSwarm();
             if (!game.isRunning) game.render();
         });
 

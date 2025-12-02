@@ -19,6 +19,7 @@ export class Player extends Entity3D {
 
         // Game properties
         this.blobCount = 1; // Starts with 1 blob
+        this.previousBlobCount = 1; // Track previous count to detect changes
 
         // Visual properties
         this.radius = 0.3; // Radius in world units
@@ -44,6 +45,10 @@ export class Player extends Entity3D {
         this.frameWidth = 0;
         this.frameHeight = 0;
         this.spriteDisplaySize = 120; // Default display size in pixels (2x bigger)
+
+        // Swarm properties
+        this.swarmBlobs = []; // Array of swarm blob objects
+        this.initializeSwarm();
     }
 
     /**
@@ -67,6 +72,111 @@ export class Player extends Entity3D {
     }
 
     /**
+     * Generate a random number from a normal distribution using Box-Muller transform
+     * @returns {number} A random number from standard normal distribution (mean=0, stddev=1)
+     */
+    randomNormal() {
+        const u1 = Math.random();
+        const u2 = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    }
+
+    /**
+     * Initialize or update the swarm based on blob count
+     */
+    initializeSwarm() {
+        // Get swarm parameters from global settings or use defaults
+        const params = window.SWARM_PARAMS || {
+            depthVariation: 1.5,
+            sizeVariationMin: 0.1,
+            sizeVariationMax: 1.0,
+            lagFactor: 0.15,
+            spreadRadius: 0.9,
+            xSpreadMultiplier: 100,
+            zSpreadMultiplier: 40
+        };
+
+        this.swarmBlobs = [];
+
+        // Always have the center blob (the main player)
+        this.swarmBlobs.push({
+            offsetX: 0,
+            offsetZ: 0,
+            targetOffsetX: 0,
+            targetOffsetZ: 0,
+            currentX: this.x,
+            currentZ: this.z,
+            sizeMultiplier: 1.0,
+            frameOffset: 0,
+            isCenter: true
+        });
+
+        // Create additional blobs around the center with random spread
+        for (let i = 1; i < this.blobCount; i++) {
+            // Use normal distribution for more organic clustering
+            // Most blobs will be near center, fewer at extremes
+            const offsetX = this.randomNormal() * params.spreadRadius * params.xSpreadMultiplier * 0.3;
+            const offsetZ = this.randomNormal() * params.depthVariation * params.zSpreadMultiplier * 0.3;
+
+            // Calculate distance from center for distance-based lag
+            const distanceFromCenter = Math.sqrt(offsetX * offsetX + offsetZ * offsetZ);
+
+            this.swarmBlobs.push({
+                offsetX: offsetX,
+                offsetZ: offsetZ,
+                targetOffsetX: offsetX,
+                targetOffsetZ: offsetZ,
+                // Spawn blobs at their target offset immediately (not at center)
+                currentX: this.x + offsetX,
+                currentZ: this.z + offsetZ,
+                sizeMultiplier: params.sizeVariationMin + Math.random() * (params.sizeVariationMax - params.sizeVariationMin),
+                frameOffset: Math.floor(Math.random() * this.frameCount), // Random starting frame
+                isCenter: false,
+                distanceFromCenter: distanceFromCenter // Store for distance-based lag
+            });
+        }
+    }
+
+    /**
+     * Add new blobs to the swarm without reinitializing existing ones
+     * @param {number} count - Number of new blobs to add
+     */
+    addNewBlobsToSwarm(count) {
+        const params = window.SWARM_PARAMS || {
+            depthVariation: 1.5,
+            sizeVariationMin: 0.1,
+            sizeVariationMax: 1.0,
+            lagFactor: 0.15,
+            spreadRadius: 0.9,
+            xSpreadMultiplier: 100,
+            zSpreadMultiplier: 40
+        };
+
+        for (let i = 0; i < count; i++) {
+            // Use normal distribution for more organic clustering
+            const offsetX = this.randomNormal() * params.spreadRadius * params.xSpreadMultiplier * 0.3;
+            const offsetZ = this.randomNormal() * params.depthVariation * params.zSpreadMultiplier * 0.3;
+
+            // Calculate distance from center for distance-based lag
+            const distanceFromCenter = Math.sqrt(offsetX * offsetX + offsetZ * offsetZ);
+
+            this.swarmBlobs.push({
+                offsetX: offsetX,
+                offsetZ: offsetZ,
+                targetOffsetX: offsetX,
+                targetOffsetZ: offsetZ,
+                // Spawn new blobs at their target offset immediately
+                currentX: this.x + offsetX,
+                currentZ: this.z + offsetZ,
+                sizeMultiplier: params.sizeVariationMin + Math.random() * (params.sizeVariationMax - params.sizeVariationMin),
+                frameOffset: Math.floor(Math.random() * this.frameCount),
+                isCenter: false,
+                distanceFromCenter: distanceFromCenter
+            });
+        }
+    }
+
+    /**
      * Update player state with movement
      * @param {number} deltaTime - Time elapsed since last frame
      * @param {Object} gameState - Current game state (includes inputManager)
@@ -75,6 +185,21 @@ export class Player extends Entity3D {
         // Get input manager from game state
         const input = gameState.inputManager;
         if (!input) return;
+
+        // Check if blob count changed and add/remove blobs
+        if (this.blobCount !== this.previousBlobCount) {
+            const diff = this.blobCount - this.previousBlobCount;
+
+            if (diff > 0) {
+                // Add new blobs
+                this.addNewBlobsToSwarm(diff);
+            } else if (diff < 0) {
+                // Remove blobs (remove from end, keep center blob)
+                this.swarmBlobs.splice(this.blobCount, -diff);
+            }
+
+            this.previousBlobCount = this.blobCount;
+        }
 
         // Calculate movement based on input
         let moveDirection = 0;
@@ -99,6 +224,41 @@ export class Player extends Entity3D {
             this.animationTimer -= frameDuration;
             this.currentFrame = (this.currentFrame + 1) % this.frameCount;
         }
+
+        // Update swarm blob positions with lag
+        this.updateSwarmPositions(deltaTime);
+    }
+
+    /**
+     * Update swarm blob positions with organic lag effect
+     * @param {number} deltaTime - Time elapsed since last frame
+     */
+    updateSwarmPositions(deltaTime) {
+        const params = window.SWARM_PARAMS || {
+            lagFactor: 0.15
+        };
+
+        this.swarmBlobs.forEach(blob => {
+            // Center blob follows immediately
+            if (blob.isCenter) {
+                blob.currentX = this.x;
+                blob.currentZ = this.z;
+            } else {
+                // Other blobs lag behind with smooth interpolation
+                const targetX = this.x + blob.targetOffsetX;
+                const targetZ = this.z + blob.targetOffsetZ;
+
+                // Distance-based lag: closer blobs respond faster, farther blobs lag more
+                // Base lag factor is reduced based on distance from center
+                // Closer blobs (small distance) get faster response, farther blobs (large distance) lag more
+                const baseLagFactor = 0.5; // Fast base response for close blobs
+                const distanceFactor = Math.max(0.01, baseLagFactor / (1 + blob.distanceFromCenter * 0.05));
+
+                // Lerp towards target position with distance-based speed
+                blob.currentX += (targetX - blob.currentX) * distanceFactor;
+                blob.currentZ += (targetZ - blob.currentZ) * distanceFactor;
+            }
+        });
     }
 
     /**
@@ -119,57 +279,52 @@ export class Player extends Entity3D {
             this.frameHeight = this.spriteSheet.height; // Single row
         }
 
-        // Project the player's 3D position to 2D screen coordinates
-        const projected = project(this.x, this.y, this.z, camera.getPosition());
+        const camPos = camera.getPosition();
 
-        // Don't draw if behind camera
-        if (!projected) return;
-
-        const { x: screenX, y: screenY, scale } = projected;
-
-        // Calculate screen center (same as Track does)
+        // Calculate screen center
         const center = {
             x: ctx.canvas.width / 2,
             y: ctx.canvas.height / 2
         };
 
+        // Sort swarm blobs by their effective "ground" Z position
+        // We need to account for sprite size when determining depth order
+        // Larger sprites in front should have their bottom edge considered, not center
+        const sortedBlobs = [...this.swarmBlobs].map(blob => {
+            // Calculate the sprite size to determine ground offset
+            const projected = project(blob.currentX, this.y, blob.currentZ, camPos);
+            let groundZ = blob.currentZ;
+
+            if (projected) {
+                const { scale } = projected;
+                const baseSize = this.radius * 50 * scale * 12;
+                const scaledSize = baseSize * blob.sizeMultiplier;
+                // Approximate world-space size adjustment based on sprite height
+                // Larger sprites should sort as if they're further forward
+                // The adjustment should be proportional to the sprite height in world units
+                const sizeAdjustment = blob.sizeMultiplier * 0.5;
+                groundZ = blob.currentZ - sizeAdjustment;
+            }
+
+            return { blob, groundZ };
+        }).sort((a, b) => b.groundZ - a.groundZ).map(item => item.blob);
+
+        // Draw each blob in the swarm
+        sortedBlobs.forEach(blob => {
+            this.drawSingleBlob(ctx, camera, center, blob);
+        });
+
+        // Draw blob count below the center sprite
+        const projected = project(this.x, this.y, this.z, camPos);
+        if (!projected) return;
+
+        const { x: screenX, y: screenY, scale } = projected;
         const finalX = center.x + screenX;
         const finalY = center.y - screenY;
+        const scaledSize = this.radius * 50 * scale * 12;
 
-        // Calculate which frame to display
-        const row = Math.floor(this.currentFrame / this.framesPerRow);
-        const col = this.currentFrame % this.framesPerRow;
-
-        // Calculate source coordinates in sprite sheet
-        const srcX = col * this.frameWidth;
-        const srcY = row * this.frameHeight;
-
-        // Apply perspective scaling to sprite size
-        // Use the same scaling as the old circle player (radius * 50) for consistency
-        const scaledSize = this.radius * 50 * scale * 12; // 12x multiplier for larger sprite
-
-        // Add glow effect
-        ctx.save();
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = '#00FFFF';
-
-        // Draw the sprite frame centered at the player position
-        // Just like the original circle, center the sprite at the projected position
-        ctx.drawImage(
-            this.spriteSheet,
-            srcX, srcY, // Source x, y
-            this.frameWidth, this.frameHeight, // Source width, height
-            finalX - scaledSize / 2, // Destination x (centered)
-            finalY - scaledSize / 2, // Destination y (centered, same as original circle)
-            scaledSize, // Destination width (scaled with perspective)
-            scaledSize  // Destination height (scaled with perspective)
-        );
-
-        ctx.restore();
-
-        // Draw blob count below the sprite
-        const countFontSize = Math.max(12, scaledSize * 0.3); // Scale with sprite size
-        const countY = finalY + scaledSize / 2 + countFontSize; // Position below sprite
+        const countFontSize = Math.max(12, scaledSize * 0.3);
+        const countY = finalY + scaledSize / 2 + countFontSize;
 
         ctx.save();
         ctx.shadowBlur = 15;
@@ -183,6 +338,55 @@ export class Player extends Entity3D {
         ctx.fillText(this.blobCount.toString(), finalX, countY);
 
         ctx.restore();
+    }
+
+    /**
+     * Draw a single blob from the swarm
+     * @param {CanvasRenderingContext2D} ctx - Canvas context
+     * @param {Camera} camera - Camera object
+     * @param {Object} center - Screen center coordinates
+     * @param {Object} blob - Blob data object
+     */
+    drawSingleBlob(ctx, camera, center, blob) {
+        // Project the blob's 3D position to 2D screen coordinates
+        const projected = project(blob.currentX, this.y, blob.currentZ, camera.getPosition());
+
+        // Don't draw if behind camera
+        if (!projected) return;
+
+        const { x: screenX, y: screenY, scale } = projected;
+
+        const finalX = center.x + screenX;
+        const finalY = center.y - screenY;
+
+        // Calculate which frame to display (offset by blob's frameOffset)
+        const blobFrame = (this.currentFrame + blob.frameOffset) % this.frameCount;
+        const row = Math.floor(blobFrame / this.framesPerRow);
+        const col = blobFrame % this.framesPerRow;
+
+        // Calculate source coordinates in sprite sheet
+        const srcX = col * this.frameWidth;
+        const srcY = row * this.frameHeight;
+
+        // Apply perspective scaling and size variation
+        const baseSize = this.radius * 50 * scale * 12;
+        const scaledSize = baseSize * blob.sizeMultiplier;
+
+        // Draw the sprite with its bottom edge at the blob's ground position
+        // The sprite should be drawn so the bottom is at finalY, not centered
+        ctx.drawImage(
+            this.spriteSheet,
+            srcX, srcY,
+            this.frameWidth, this.frameHeight,
+            finalX - scaledSize / 2,
+            finalY - scaledSize,  // Bottom edge at finalY instead of center
+            scaledSize,
+            scaledSize
+        );
+
+        // DEBUG: Draw red dot at blob's actual position
+        ctx.fillStyle = 'red';
+        ctx.fillRect(finalX - 2, finalY - 2, 4, 4);
     }
 
     /**
