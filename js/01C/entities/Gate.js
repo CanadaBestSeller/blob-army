@@ -24,6 +24,7 @@ export class Gate extends Entity3D {
         this.type = type; // 'addition' or 'multiplication'
         this.width = GameParameters.GATE_WIDTH;
         this.height = GameParameters.GATE_HEIGHT;
+        this.consumed = false; // Track if gate has been consumed
 
         // Determine color based on value
         this.color = value >= 0
@@ -48,6 +49,9 @@ export class Gate extends Entity3D {
      * @param {Object} gameState - Game state (optional)
      */
     draw(ctx, camera, gameState = {}) {
+        // Don't draw if consumed
+        if (this.consumed) return;
+
         const camPos = camera.getPosition();
 
         // Calculate gate corners in 3D space
@@ -162,5 +166,49 @@ export class Gate extends Entity3D {
      */
     isPassed(playerZ) {
         return playerZ > this.z;
+    }
+
+    /**
+     * Check if player is colliding with this gate
+     * @param {Player} player - The player entity
+     * @returns {boolean} True if player is colliding with gate
+     */
+    checkCollision(player) {
+        // Don't collide if already consumed
+        if (this.consumed) return false;
+
+        // Check if player's Z position is within the gate's depth
+        // Gates have minimal depth, so we check if player is approximately at gate's Z
+        const gateDepth = 1.5; // Collision zone depth (increased for better detection)
+        const isInZRange = Math.abs(player.z - this.z) < gateDepth;
+
+        if (!isInZRange) return false;
+
+        // Check if player's X position is within the gate's width
+        const halfWidth = this.width / 2;
+        const isInXRange = player.x >= (this.x - halfWidth) && player.x <= (this.x + halfWidth);
+
+        return isInXRange;
+    }
+
+    /**
+     * Apply gate effect to player
+     * @param {Player} player - The player entity
+     */
+    applyEffect(player) {
+        if (this.consumed) return;
+
+        if (this.type === 'multiplication') {
+            // Multiply blob count
+            const currentCount = player.getBlobCount();
+            const newCount = Math.floor(currentCount * this.value);
+            player.blobCount = newCount;
+        } else {
+            // Add or subtract blobs
+            player.addBlobs(Math.floor(this.value));
+        }
+
+        // Mark gate as consumed
+        this.consumed = true;
     }
 }

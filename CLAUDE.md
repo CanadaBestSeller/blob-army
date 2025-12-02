@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Testing
 - We are always editing index.html
-- After making every change, I want you to run the test harness: node run-test-playwright.js
+- After making every change, I want you to run the test harness: node run-test-playwright.js - after testing, I want you to read the screenshots and comment what the screenshots look like. If there are any errors, fix them before reporting back to me
 - The live server is here: http://localhost:8080/
 - If I ask you to implement a 3D entity that we don’t have art assets for, I want you to render it as a placeholder asset: a cylinder with a checkerboard texture and text label
 

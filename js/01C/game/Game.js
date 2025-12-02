@@ -140,6 +140,11 @@ export class Game {
             }
         });
 
+        // Check gate collisions (only in PLAYING state)
+        if (this.state === 'PLAYING' && player) {
+            this.checkGateCollisions(player);
+        }
+
         // Make camera follow player
         if (player && this.camera.followTarget) {
             this.camera.followTarget(player);
@@ -250,5 +255,22 @@ export class Game {
      */
     setObstacleSpawner(spawner) {
         this.obstacleSpawner = spawner;
+    }
+
+    /**
+     * Check for collisions between player and gates
+     * @param {Player} player - The player entity
+     */
+    checkGateCollisions(player) {
+        // Find all gate entities
+        const gates = this.entities.filter(e => e.constructor.name === 'Gate');
+
+        gates.forEach(gate => {
+            if (gate.checkCollision(player)) {
+                // Apply gate effect to player
+                gate.applyEffect(player);
+                console.log(`Gate collision! Type: ${gate.type}, Value: ${gate.value}, New blob count: ${player.getBlobCount()}`);
+            }
+        });
     }
 }
