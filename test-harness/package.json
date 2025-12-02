@@ -1,0 +1,13 @@
+{
+  "name": "blob-army-test-harness",
+  "version": "1.0.0",
+  "description": "Automated test harness for Blob Army game",
+  "main": "test-gameplay.js",
+  "type": "module",
+  "scripts": {
+    "test": "node test-gameplay.js"
+  },
+  "dependencies": {
+    "puppeteer": "^21.6.1"
+  }
+}

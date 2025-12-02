@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Testing
 - We are always editing index.html
-- For testing, use http://localhost:8080/ - we have a python server
+- After making every change, I want you to run the test harness: node run-test-playwright.js
+- The live server is here: http://localhost:8080/
 - If I ask you to implement a 3D entity that we don’t have art assets for, I want you to render it as a placeholder asset: a cylinder with a checkerboard texture and text label
 
 # Rules for Claude
