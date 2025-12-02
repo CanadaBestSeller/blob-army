@@ -39,7 +39,7 @@ async function runTest() {
 
     try {
         const context = await browser.newContext({
-            viewport: { width: 1920, height: 1080 }
+            viewport: { width: 1000, height: 1000 }
         });
 
         const page = await context.newPage();
@@ -85,8 +85,13 @@ async function runTest() {
                 if (screenshotIndex < SCREENSHOT_TIMES.length &&
                     elapsed >= SCREENSHOT_TIMES[screenshotIndex]) {
                     const time = SCREENSHOT_TIMES[screenshotIndex];
-                    const filename = path.join(SCREENSHOTS_DIR, `screenshot-${time}ms.png`);
-                    await page.screenshot({ path: filename, fullPage: false });
+                    const filename = path.join(SCREENSHOTS_DIR, `screenshot-${time}ms.jpg`);
+                    await page.screenshot({
+                        path: filename,
+                        fullPage: false,
+                        type: 'jpeg',
+                        quality: 50
+                    });
                     console.log(`📸 Screenshot taken at ${(time/1000).toFixed(1)}s`);
                     screenshots.push({ time, filename });
                     screenshotIndex++;
@@ -110,8 +115,13 @@ async function runTest() {
             // Capture any remaining screenshots
             while (screenshotIndex < SCREENSHOT_TIMES.length) {
                 const time = SCREENSHOT_TIMES[screenshotIndex];
-                const filename = path.join(SCREENSHOTS_DIR, `screenshot-${time}ms.png`);
-                await page.screenshot({ path: filename, fullPage: false });
+                const filename = path.join(SCREENSHOTS_DIR, `screenshot-${time}ms.jpg`);
+                await page.screenshot({
+                    path: filename,
+                    fullPage: false,
+                    type: 'jpeg',
+                    quality: 50
+                });
                 console.log(`📸 Screenshot taken at ${(time/1000).toFixed(1)}s`);
                 screenshots.push({ time, filename });
                 screenshotIndex++;
@@ -129,7 +139,7 @@ async function runTest() {
         // Display screenshots in terminal (just the paths)
         console.log('\n📁 Screenshot files:');
         SCREENSHOT_TIMES.forEach(time => {
-            const filename = path.join(SCREENSHOTS_DIR, `screenshot-${time}ms.png`);
+            const filename = path.join(SCREENSHOTS_DIR, `screenshot-${time}ms.jpg`);
             if (fs.existsSync(filename)) {
                 console.log(`  ✓ ${filename}`);
             }
