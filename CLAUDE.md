@@ -2,9 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# Testing
+- We are always editing index.html
+- For testing, use http://localhost:8080/ - we have a python server
+- If I ask you to implement a 3D entity that we don’t have art assets for, I want you to render it as a placeholder asset: a cylinder with a checkerboard texture and text label
+
 # Rules for Claude
 
-- If I don't go into plan mode and I want to execute something that's not unbelievably simple like like not one single small change, make sure to push back on me if there are any clarifying questions.
+- If I don't go into plan mode and I want to execute something that's not unbelievably simple like not one single small change, make sure to push back on me if there are any clarifying questions.
 - Always stop after completing a phase of a plan to ask for approval to proceed with the next phase
 - Clarify which phase of the development plan + the task number you will be working on, if necessary.
 - Don't do visual testing. The user will perform visual testing.
