@@ -22,9 +22,9 @@ export const GameParameters = {
 
     // Track & Lanes
     TRACK_WIDTH: 400, // total width of playable area
-    LANE_COUNT: 2,
+    LANE_COUNT: 3,
     LANE_SPACING: 200, // distance between lane centers
-    LANE_OFFSET: -100, // offset from center (Lane 1 at -100, Lane 2 at +100)
+    LANE_OFFSET: -200, // offset from center (Lane 1 at -200, Lane 2 at 0, Lane 3 at +200)
     TRACK_LENGTH: 2000, // visual length extending into distance
 
     // Track Markers (Horizontal)

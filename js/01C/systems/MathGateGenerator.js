@@ -7,12 +7,12 @@ import { Gate } from '../entities/Gate.js';
 
 export class MathGateGenerator {
     /**
-     * Generate a pair of math gates (one addition, one multiplication)
+     * Generate three staggered math gates (addition and multiplication)
      * Uses revised linear growth system to prevent runaway exponential growth
      * @param {number} spawnZ - Z position where gates should spawn
      * @param {number} currentSwarmSize - Player's current blob count (C)
      * @param {number} lanePositions - Array of lane X positions
-     * @returns {Array<Gate>} Array of two gates (one per lane)
+     * @returns {Array<Gate>} Array of three gates (one per lane, staggered in Z)
      */
     static generateMathGatePair(spawnZ, currentSwarmSize, lanePositions) {
         // Ensure we have a valid swarm size (minimum 1)
@@ -37,17 +37,37 @@ export class MathGateGenerator {
         // Ensure addition is at least 1
         const finalAdditionValue = Math.max(1, Math.ceil(additionValue));
 
-        // Randomly assign which gate goes to which lane
-        const gates = [];
+        // Generate a second addition value for the third gate
+        const variance2 = Math.floor(Math.random() * 8) + 1; // 1 to 8
+        const additionValue2 = actualMultiplicationGain + (Math.random() < 0.5 ? variance2 : -variance2);
+        const finalAdditionValue2 = Math.max(1, Math.ceil(additionValue2));
 
-        if (Math.random() < 0.5) {
-            // Addition on left, multiplication on right
-            gates.push(new Gate(lanePositions[0], 0, spawnZ, finalAdditionValue, 'addition'));
-            gates.push(new Gate(lanePositions[1], 0, spawnZ, multiplicationValue, 'multiplication'));
-        } else {
-            // Multiplication on left, addition on right
-            gates.push(new Gate(lanePositions[0], 0, spawnZ, multiplicationValue, 'multiplication'));
-            gates.push(new Gate(lanePositions[1], 0, spawnZ, finalAdditionValue, 'addition'));
+        // Stagger spacing (distance between gates in Z)
+        const staggerDistance = 150; // 1.5 meters worth of world units
+
+        // Create array of gate configurations with staggered Z positions
+        const gateConfigs = [
+            { value: finalAdditionValue, type: 'addition', zOffset: 0 },
+            { value: multiplicationValue, type: 'multiplication', zOffset: staggerDistance },
+            { value: finalAdditionValue2, type: 'addition', zOffset: staggerDistance * 2 }
+        ];
+
+        // Shuffle gate configs to randomize which type appears in which lane
+        for (let i = gateConfigs.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [gateConfigs[i], gateConfigs[j]] = [gateConfigs[j], gateConfigs[i]];
+        }
+
+        // Create gates with staggered positions
+        const gates = [];
+        for (let i = 0; i < 3; i++) {
+            gates.push(new Gate(
+                lanePositions[i],
+                0,
+                spawnZ + gateConfigs[i].zOffset,
+                gateConfigs[i].value,
+                gateConfigs[i].type
+            ));
         }
 
         return gates;
