@@ -177,18 +177,35 @@ export class Gate extends Entity3D {
         // Don't collide if already consumed
         if (this.consumed) return false;
 
-        // Check if player's Z position is within the gate's depth
-        // Gates have minimal depth, so we check if player is approximately at gate's Z
-        const gateDepth = 1.5; // Collision zone depth (increased for better detection)
-        const isInZRange = Math.abs(player.z - this.z) < gateDepth;
-
-        if (!isInZRange) return false;
-
-        // Check if player's X position is within the gate's width
+        // Check collision with the swarm - any blob can trigger the gate
         const halfWidth = this.width / 2;
-        const isInXRange = player.x >= (this.x - halfWidth) && player.x <= (this.x + halfWidth);
+        const gateDepth = 1.5; // Collision zone depth (increased for better detection)
 
-        return isInXRange;
+        // If player has swarmBlobs, check each blob
+        if (player.swarmBlobs && player.swarmBlobs.length > 0) {
+            for (const blob of player.swarmBlobs) {
+                // Check if blob's Z position is within the gate's depth
+                const isInZRange = Math.abs(blob.currentZ - this.z) < gateDepth;
+
+                if (isInZRange) {
+                    // Check if blob's X position is within the gate's width
+                    const isInXRange = blob.currentX >= (this.x - halfWidth) &&
+                                      blob.currentX <= (this.x + halfWidth);
+
+                    if (isInXRange) {
+                        return true; // Any blob colliding triggers the gate
+                    }
+                }
+            }
+            return false;
+        } else {
+            // Fallback to center position if no swarm data
+            const isInZRange = Math.abs(player.z - this.z) < gateDepth;
+            if (!isInZRange) return false;
+
+            const isInXRange = player.x >= (this.x - halfWidth) && player.x <= (this.x + halfWidth);
+            return isInXRange;
+        }
     }
 
     /**

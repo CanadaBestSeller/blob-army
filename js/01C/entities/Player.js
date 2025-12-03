@@ -26,6 +26,9 @@ export class Player extends Entity3D {
         this.color = this.generateRandomBrightColor();
         this.visible = true; // Visibility flag
 
+        // Blob ID counter for stable sorting
+        this.nextBlobId = 0;
+
         // Sprite animation properties
         this.spriteSheet = new Image();
         this.spriteSheet.src = 'js/01C/assets/Blue_Slime/Run.png';
@@ -92,23 +95,29 @@ export class Player extends Entity3D {
             sizeVariationMax: 1.0,
             lagFactor: 0.15,
             spreadRadius: 0.9,
-            xSpreadMultiplier: 100,
-            zSpreadMultiplier: 40
+            xSpreadMultiplier: 150,
+            zSpreadMultiplier: 50
         };
 
         this.swarmBlobs = [];
 
+        // Calculate center blob size based on total blob count
+        const centerBlobSize = 1.2;
+
         // Always have the center blob (the main player)
         this.swarmBlobs.push({
+            id: this.nextBlobId++,
             offsetX: 0,
             offsetZ: 0,
             targetOffsetX: 0,
             targetOffsetZ: 0,
             currentX: this.x,
             currentZ: this.z,
-            sizeMultiplier: 1.0,
+            sizeMultiplier: centerBlobSize,
             frameOffset: 0,
-            isCenter: true
+            isCenter: true,
+            spawnTime: 0, // Center blob doesn't fade in
+            fadeInDuration: 0
         });
 
         // Create additional blobs around the center with random spread
@@ -116,12 +125,14 @@ export class Player extends Entity3D {
             // Use normal distribution for more organic clustering
             // Most blobs will be near center, fewer at extremes
             const offsetX = this.randomNormal() * params.spreadRadius * params.xSpreadMultiplier * 0.3;
-            const offsetZ = this.randomNormal() * params.depthVariation * params.zSpreadMultiplier * 0.3;
+            // Bias Z offset to be more forward (positive Z = toward camera) to balance visual clustering
+            const offsetZ = (this.randomNormal() + 1.0) * params.depthVariation * params.zSpreadMultiplier * 0.3;
 
             // Calculate distance from center for distance-based lag
             const distanceFromCenter = Math.sqrt(offsetX * offsetX + offsetZ * offsetZ);
 
             this.swarmBlobs.push({
+                id: this.nextBlobId++,
                 offsetX: offsetX,
                 offsetZ: offsetZ,
                 targetOffsetX: offsetX,
@@ -132,7 +143,9 @@ export class Player extends Entity3D {
                 sizeMultiplier: params.sizeVariationMin + Math.random() * (params.sizeVariationMax - params.sizeVariationMin),
                 frameOffset: Math.floor(Math.random() * this.frameCount), // Random starting frame
                 isCenter: false,
-                distanceFromCenter: distanceFromCenter // Store for distance-based lag
+                distanceFromCenter: distanceFromCenter, // Store for distance-based lag
+                spawnTime: Date.now(), // Track when blob was spawned for fade-in
+                fadeInDuration: 500 // Fade-in duration in milliseconds
             });
         }
     }
@@ -155,12 +168,14 @@ export class Player extends Entity3D {
         for (let i = 0; i < count; i++) {
             // Use normal distribution for more organic clustering
             const offsetX = this.randomNormal() * params.spreadRadius * params.xSpreadMultiplier * 0.3;
-            const offsetZ = this.randomNormal() * params.depthVariation * params.zSpreadMultiplier * 0.3;
+            // Bias Z offset to be more forward (positive Z = toward camera) to balance visual clustering
+            const offsetZ = (this.randomNormal() + 1.0) * params.depthVariation * params.zSpreadMultiplier * 0.3;
 
             // Calculate distance from center for distance-based lag
             const distanceFromCenter = Math.sqrt(offsetX * offsetX + offsetZ * offsetZ);
 
             this.swarmBlobs.push({
+                id: this.nextBlobId++,
                 offsetX: offsetX,
                 offsetZ: offsetZ,
                 targetOffsetX: offsetX,
@@ -171,7 +186,9 @@ export class Player extends Entity3D {
                 sizeMultiplier: params.sizeVariationMin + Math.random() * (params.sizeVariationMax - params.sizeVariationMin),
                 frameOffset: Math.floor(Math.random() * this.frameCount),
                 isCenter: false,
-                distanceFromCenter: distanceFromCenter
+                distanceFromCenter: distanceFromCenter,
+                spawnTime: Date.now(), // Track when blob was spawned for fade-in
+                fadeInDuration: 500 // Fade-in duration in milliseconds
             });
         }
     }
@@ -196,6 +213,12 @@ export class Player extends Entity3D {
             } else if (diff < 0) {
                 // Remove blobs (remove from end, keep center blob)
                 this.swarmBlobs.splice(this.blobCount, -diff);
+            }
+
+            // Update center blob size based on new blob count
+            const centerBlobSize = Math.min(1.2 + (this.blobCount * 0.003), 3);
+            if (this.swarmBlobs.length > 0 && this.swarmBlobs[0].isCenter) {
+                this.swarmBlobs[0].sizeMultiplier = centerBlobSize;
             }
 
             this.previousBlobCount = this.blobCount;
@@ -290,7 +313,7 @@ export class Player extends Entity3D {
         // Sort swarm blobs by their effective "ground" Z position
         // We need to account for sprite size when determining depth order
         // Larger sprites in front should have their bottom edge considered, not center
-        const sortedBlobs = [...this.swarmBlobs].map(blob => {
+        const sortedBlobs = [...this.swarmBlobs].map((blob) => {
             // Calculate the sprite size to determine ground offset
             const projected = project(blob.currentX, this.y, blob.currentZ, camPos);
             let groundZ = blob.currentZ;
@@ -307,7 +330,17 @@ export class Player extends Entity3D {
             }
 
             return { blob, groundZ };
-        }).sort((a, b) => b.groundZ - a.groundZ).map(item => item.blob);
+        }).sort((a, b) => {
+            // Use epsilon for Z-depth comparison to reduce flickering
+            const zDiff = b.groundZ - a.groundZ;
+            const epsilon = 5.0; // Large threshold to handle lag-based movement
+
+            if (Math.abs(zDiff) < epsilon) {
+                // If blobs are at nearly the same depth, use stable blob ID for consistent ordering
+                return a.blob.id - b.blob.id;
+            }
+            return zDiff;
+        }).map(item => item.blob);
 
         // Draw each blob in the swarm
         sortedBlobs.forEach(blob => {
@@ -372,21 +405,45 @@ export class Player extends Entity3D {
         const baseSize = this.radius * 50 * scale * 12;
         const scaledSize = baseSize * blob.sizeMultiplier;
 
+        // Calculate fade-in effect
+        const timeSinceSpawn = Date.now() - blob.spawnTime;
+        const fadeProgress = Math.min(1, timeSinceSpawn / blob.fadeInDuration);
+
+        ctx.save();
+
+        // Apply fade-in alpha
+        ctx.globalAlpha = fadeProgress;
+
         // Draw the sprite with its bottom edge at the blob's ground position
-        // The sprite should be drawn so the bottom is at finalY, not centered
         ctx.drawImage(
             this.spriteSheet,
             srcX, srcY,
             this.frameWidth, this.frameHeight,
             finalX - scaledSize / 2,
-            finalY - scaledSize,  // Bottom edge at finalY instead of center
+            finalY - scaledSize,
             scaledSize,
             scaledSize
         );
 
-        // DEBUG: Draw red dot at blob's actual position
-        ctx.fillStyle = 'red';
-        ctx.fillRect(finalX - 2, finalY - 2, 4, 4);
+        // Apply white-to-color transition overlay
+        if (fadeProgress < 1) {
+            // Blend from white to transparent as fade progresses
+            const whiteAmount = 1 - fadeProgress;
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = whiteAmount * 1.5; // Increased intensity
+
+            ctx.drawImage(
+                this.spriteSheet,
+                srcX, srcY,
+                this.frameWidth, this.frameHeight,
+                finalX - scaledSize / 2,
+                finalY - scaledSize,
+                scaledSize,
+                scaledSize
+            );
+        }
+
+        ctx.restore();
     }
 
     /**
