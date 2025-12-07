@@ -29,8 +29,8 @@ export class Enemy extends Entity3D {
         };
 
         // Sprite dimensions
-        this.spriteDisplaySize = 60; // Base display size in pixels
-        this.spriteHeightMultiplier = 0.5; // Height shrinkage for angled perspective (same as player)
+        this.spriteDisplaySize = 120; // Base display size in pixels
+        this.spriteHeightMultiplier = 1.0; // Full height (no shrinkage)
     }
 
     /**
