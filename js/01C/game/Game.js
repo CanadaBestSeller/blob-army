@@ -21,9 +21,10 @@ export class Game {
 
         // Game state
         this.running = false;
-        this.state = 'PREPLAY'; // PREPLAY, PLAYING
+        this.state = 'PREPLAY'; // PREPLAY, PLAYING, GAME_OVER
         this.lastTime = 0;
         this.distanceTraveled = 0; // In world units
+        this.finalDistance = 0; // Distance when game over occurred
 
         // Entities (managed by renderer, but we track them here too)
         this.entities = [];
@@ -108,7 +109,7 @@ export class Game {
         // World scrolling speed
         const scrollSpeed = GameParameters.WORLD_SCROLL_SPEED;
 
-        // Track distance traveled
+        // Track distance traveled (continues even in game over for world scrolling)
         this.distanceTraveled += scrollSpeed * deltaTime;
 
         // Get player reference
@@ -123,12 +124,13 @@ export class Game {
         };
 
         // Move player forward (not gates or track - they stay fixed in world space)
-        if (player) {
+        // Only move player in PLAYING state
+        if (this.state === 'PLAYING' && player) {
             player.z += scrollSpeed * deltaTime;
         }
 
-        // Update obstacle spawner (only in PLAYING state)
-        if (this.state === 'PLAYING' && this.obstacleSpawner) {
+        // Update obstacle spawner (continues in game over for visual effect)
+        if (this.obstacleSpawner) {
             this.obstacleSpawner.update(deltaTime);
         }
 
@@ -143,10 +145,19 @@ export class Game {
         // Check gate collisions (only in PLAYING state)
         if (this.state === 'PLAYING' && player) {
             this.checkGateCollisions(player);
+            this.checkEnemyCollisions(player);
+
+            // Check for game over (no fighters left)
+            if (player.getBlobCount() <= 0) {
+                this.gameOver();
+            }
         }
 
-        // Make camera follow player
-        if (player && this.camera.followTarget) {
+        // Make camera follow player (or continue scrolling in game over)
+        if (this.state === 'GAME_OVER') {
+            // During game over, keep camera moving forward to maintain scrolling effect
+            this.camera.z += scrollSpeed * deltaTime;
+        } else if (player && this.camera.followTarget) {
             this.camera.followTarget(player);
         }
 
@@ -250,6 +261,36 @@ export class Game {
     }
 
     /**
+     * Trigger game over
+     */
+    gameOver() {
+        this.state = 'GAME_OVER';
+        // Store the final distance at the moment of game over
+        this.finalDistance = this.distanceTraveled;
+        console.log('Game Over! Final distance:', (this.finalDistance * GameParameters.METERS_PER_PIXEL).toFixed(1), 'm');
+        // Keep running so we can still render the game over screen and world scrolling
+    }
+
+    /**
+     * Get the display distance (frozen at game over distance, or current distance if playing)
+     * @returns {number} Distance in world units
+     */
+    getDisplayDistance() {
+        if (this.state === 'GAME_OVER') {
+            return this.finalDistance;
+        }
+        return this.distanceTraveled;
+    }
+
+    /**
+     * Get display distance in meters
+     * @returns {number} Distance in meters
+     */
+    getDisplayDistanceInMeters() {
+        return this.getDisplayDistance() * GameParameters.METERS_PER_PIXEL;
+    }
+
+    /**
      * Set the obstacle spawner
      * @param {ObstacleSpawner} spawner - The obstacle spawner instance
      */
@@ -272,5 +313,56 @@ export class Game {
                 console.log(`Gate collision! Type: ${gate.type}, Value: ${gate.value}, New blob count: ${player.getBlobCount()}`);
             }
         });
+    }
+
+    /**
+     * Check for collisions between player blobs and enemies
+     * @param {Player} player - The player entity
+     */
+    checkEnemyCollisions(player) {
+        // Find all enemy entities that haven't been neutralized
+        const enemies = this.entities.filter(e => e.constructor.name === 'Enemy' && !e.isNeutralized());
+
+        // Get player's swarm blobs
+        if (!player.swarmBlobs || player.swarmBlobs.length === 0) return;
+
+        const blobsToRemove = new Set(); // Use Set to avoid duplicates
+
+        enemies.forEach(enemy => {
+            // Check each blob for collision with this enemy
+            for (let i = player.swarmBlobs.length - 1; i >= 0; i--) {
+                // Skip blobs that are already marked for removal
+                if (blobsToRemove.has(i)) continue;
+
+                const blob = player.swarmBlobs[i];
+
+                // Pass player's Y position and camera for sprite-based collision
+                if (enemy.checkBlobCollision(blob, player.y, this.camera)) {
+                    // Mark blob for removal
+                    blobsToRemove.add(i);
+
+                    // Neutralize the enemy
+                    enemy.neutralize();
+
+                    console.log(`Enemy neutralized! Blob ${i} destroyed. Remaining blobs: ${player.getBlobCount() - 1}`);
+
+                    // Only one blob can neutralize this enemy
+                    break;
+                }
+            }
+        });
+
+        // Only update blob count if blobs were actually removed
+        if (blobsToRemove.size > 0) {
+            // Remove blobs that collided with enemies (in reverse order to maintain indices)
+            const blobIndices = Array.from(blobsToRemove).sort((a, b) => b - a);
+            blobIndices.forEach(index => {
+                player.swarmBlobs.splice(index, 1);
+            });
+
+            // Update blob count to match the new swarm size
+            player.blobCount = player.swarmBlobs.length;
+            player.previousBlobCount = player.blobCount; // Prevent triggering blob count change logic
+        }
     }
 }

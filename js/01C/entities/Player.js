@@ -29,25 +29,17 @@ export class Player extends Entity3D {
         // Blob ID counter for stable sorting
         this.nextBlobId = 0;
 
-        // Sprite animation properties
+        // Sprite properties - stealth fighter
         this.spriteSheet = new Image();
-        this.spriteSheet.src = 'js/01C/assets/Blue_Slime/Run.png';
+        this.spriteSheet.src = 'js/01C/assets/stealth-fighter-v2.png';
         this.spriteLoaded = false;
         this.spriteSheet.onload = () => {
             this.spriteLoaded = true;
         };
 
-        // Sprite sheet configuration (7 frames in 1 row)
-        this.frameCount = 7;
-        this.framesPerRow = 7;
-        this.currentFrame = 0;
-        this.animationSpeed = 10; // FPS for animation
-        this.animationTimer = 0;
-
         // Sprite dimensions (will be calculated after image loads)
-        this.frameWidth = 0;
-        this.frameHeight = 0;
-        this.spriteDisplaySize = 120; // Default display size in pixels (2x bigger)
+        this.spriteDisplaySize = 72; // Base display size in pixels (60 * 1.2)
+        this.spriteHeightMultiplier = 0.5; // Height shrinkage for angled perspective
 
         // Swarm properties
         this.swarmBlobs = []; // Array of swarm blob objects
@@ -95,8 +87,8 @@ export class Player extends Entity3D {
             sizeVariationMax: 1.0,
             lagFactor: 0.15,
             spreadRadius: 0.9,
-            xSpreadMultiplier: 150,
-            zSpreadMultiplier: 50
+            xSpreadMultiplier: 100,
+            zSpreadMultiplier: 80
         };
 
         this.swarmBlobs = [];
@@ -125,8 +117,12 @@ export class Player extends Entity3D {
             // Use normal distribution for more organic clustering
             // Most blobs will be near center, fewer at extremes
             const offsetX = this.randomNormal() * params.spreadRadius * params.xSpreadMultiplier * 0.3;
+
             // Bias Z offset to be more forward (positive Z = toward camera) to balance visual clustering
-            const offsetZ = (this.randomNormal() + 1.0) * params.depthVariation * params.zSpreadMultiplier * 0.3;
+            // Add minimum Z-distance to prevent blobs from being too close to the main fighter
+            const minZDistance = 15; // Minimum Z-distance from center
+            const rawOffsetZ = (this.randomNormal() + 1.0) * params.depthVariation * params.zSpreadMultiplier * 0.3;
+            const offsetZ = rawOffsetZ < minZDistance ? rawOffsetZ + minZDistance : rawOffsetZ;
 
             // Calculate distance from center for distance-based lag
             const distanceFromCenter = Math.sqrt(offsetX * offsetX + offsetZ * offsetZ);
@@ -162,14 +158,18 @@ export class Player extends Entity3D {
             lagFactor: 0.15,
             spreadRadius: 0.9,
             xSpreadMultiplier: 100,
-            zSpreadMultiplier: 40
+            zSpreadMultiplier: 80
         };
 
         for (let i = 0; i < count; i++) {
             // Use normal distribution for more organic clustering
             const offsetX = this.randomNormal() * params.spreadRadius * params.xSpreadMultiplier * 0.3;
+
             // Bias Z offset to be more forward (positive Z = toward camera) to balance visual clustering
-            const offsetZ = (this.randomNormal() + 1.0) * params.depthVariation * params.zSpreadMultiplier * 0.3;
+            // Add minimum Z-distance to prevent blobs from being too close to the main fighter
+            const minZDistance = 15; // Minimum Z-distance from center
+            const rawOffsetZ = (this.randomNormal() + 1.0) * params.depthVariation * params.zSpreadMultiplier * 0.3;
+            const offsetZ = rawOffsetZ < minZDistance ? rawOffsetZ + minZDistance : rawOffsetZ;
 
             // Calculate distance from center for distance-based lag
             const distanceFromCenter = Math.sqrt(offsetX * offsetX + offsetZ * offsetZ);
@@ -206,6 +206,7 @@ export class Player extends Entity3D {
         // Check if blob count changed and add/remove blobs
         if (this.blobCount !== this.previousBlobCount) {
             const diff = this.blobCount - this.previousBlobCount;
+            console.log(`Player blob count changed: ${this.previousBlobCount} → ${this.blobCount} (diff: ${diff})`);
 
             if (diff > 0) {
                 // Add new blobs
@@ -222,6 +223,7 @@ export class Player extends Entity3D {
             }
 
             this.previousBlobCount = this.blobCount;
+            console.log(`Swarm updated: ${this.swarmBlobs.length} blobs in swarm`);
         }
 
         // Calculate movement based on input
@@ -238,14 +240,6 @@ export class Player extends Entity3D {
             const minX = -GameParameters.TRACK_WIDTH / 2;
             const maxX = GameParameters.TRACK_WIDTH / 2;
             this.x = Math.max(minX, Math.min(maxX, this.x));
-        }
-
-        // Update sprite animation
-        this.animationTimer += deltaTime;
-        const frameDuration = 1 / this.animationSpeed;
-        if (this.animationTimer >= frameDuration) {
-            this.animationTimer -= frameDuration;
-            this.currentFrame = (this.currentFrame + 1) % this.frameCount;
         }
 
         // Update swarm blob positions with lag
@@ -295,12 +289,6 @@ export class Player extends Entity3D {
 
         // Don't draw if sprite hasn't loaded yet
         if (!this.spriteLoaded) return;
-
-        // Calculate frame dimensions if not already done
-        if (this.frameWidth === 0) {
-            this.frameWidth = this.spriteSheet.width / this.framesPerRow;
-            this.frameHeight = this.spriteSheet.height; // Single row
-        }
 
         const camPos = camera.getPosition();
 
@@ -392,56 +380,32 @@ export class Player extends Entity3D {
         const finalX = center.x + screenX;
         const finalY = center.y - screenY;
 
-        // Calculate which frame to display (offset by blob's frameOffset)
-        const blobFrame = (this.currentFrame + blob.frameOffset) % this.frameCount;
-        const row = Math.floor(blobFrame / this.framesPerRow);
-        const col = blobFrame % this.framesPerRow;
-
-        // Calculate source coordinates in sprite sheet
-        const srcX = col * this.frameWidth;
-        const srcY = row * this.frameHeight;
-
-        // Apply perspective scaling and size variation
-        const baseSize = this.radius * 50 * scale * 12;
-        const scaledSize = baseSize * blob.sizeMultiplier;
-
         // Calculate fade-in effect
         const timeSinceSpawn = Date.now() - blob.spawnTime;
         const fadeProgress = Math.min(1, timeSinceSpawn / blob.fadeInDuration);
+
+        // Calculate display size based on scale and blob size multiplier
+        const baseSize = this.spriteDisplaySize * scale;
+        const displayWidth = baseSize * blob.sizeMultiplier;
+        const displayHeight = baseSize * blob.sizeMultiplier * this.spriteHeightMultiplier;
 
         ctx.save();
 
         // Apply fade-in alpha
         ctx.globalAlpha = fadeProgress;
 
-        // Draw the sprite with its bottom edge at the blob's ground position
+        // Draw stealth fighter sprite
+        // Center the sprite at the position
+        const drawX = finalX - displayWidth / 2;
+        const drawY = finalY - displayHeight / 2;
+
         ctx.drawImage(
             this.spriteSheet,
-            srcX, srcY,
-            this.frameWidth, this.frameHeight,
-            finalX - scaledSize / 2,
-            finalY - scaledSize,
-            scaledSize,
-            scaledSize
+            drawX,
+            drawY,
+            displayWidth,
+            displayHeight
         );
-
-        // Apply white-to-color transition overlay
-        if (fadeProgress < 1) {
-            // Blend from white to transparent as fade progresses
-            const whiteAmount = 1 - fadeProgress;
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.globalAlpha = whiteAmount * 1.5; // Increased intensity
-
-            ctx.drawImage(
-                this.spriteSheet,
-                srcX, srcY,
-                this.frameWidth, this.frameHeight,
-                finalX - scaledSize / 2,
-                finalY - scaledSize,
-                scaledSize,
-                scaledSize
-            );
-        }
 
         ctx.restore();
     }
@@ -459,10 +423,12 @@ export class Player extends Entity3D {
      * @param {number} count - Number of blobs to add (can be negative)
      */
     addBlobs(count) {
+        const before = this.blobCount;
         this.blobCount += count;
         // Prevent blob count from going below 0
         if (this.blobCount < 0) {
             this.blobCount = 0;
         }
+        console.log(`addBlobs: ${before} + ${count} = ${this.blobCount}`);
     }
 }

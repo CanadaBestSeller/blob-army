@@ -1064,8 +1064,15 @@
             </div>
             <div class="control-group">
                 <label>
-                    Z-Spread Multiplier: <input type="range" id="swarmZSpreadMult" min="1" max="100" value="40" style="width: 120px;">
-                    <span id="swarmZSpreadMultValue">40</span>
+                    Z-Spread Multiplier: <input type="range" id="swarmZSpreadMult" min="1" max="100" value="80" style="width: 120px;">
+                    <span id="swarmZSpreadMultValue">80</span>
+                </label>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Sprite Height Multiplier: <input type="range" id="spriteHeightMult" min="10" max="150" value="50" style="width: 120px;">
+                    <span id="spriteHeightMultValue">0.50</span>
                 </label>
             </div>
         </div>
@@ -1081,6 +1088,7 @@
         import { Game } from './js/01C/game/Game.js';
         import { ObstacleSpawner } from './js/01C/systems/ObstacleSpawner.js';
         import { MathGateGenerator } from './js/01C/systems/MathGateGenerator.js';
+        import { EnemyGenerator } from './js/01C/systems/EnemyGenerator.js';
         import { ComputedValues } from './js/01C/game/GameParameters.js';
 
         const canvas = document.getElementById('gameCanvas');
@@ -1195,7 +1203,13 @@
             const lanePositions = ComputedValues.LANE_POSITIONS;
             const currentSwarmSize = player.getBlobCount();
             return MathGateGenerator.generateMathGatePair(z, currentSwarmSize, lanePositions);
-        }, 1); // Weight of 1 (only generator for now)
+        }, 1);
+
+        // Register enemy generator
+        obstacleSpawner.registerGenerator((z) => {
+            const lanePositions = ComputedValues.LANE_POSITIONS;
+            return EnemyGenerator.generateEnemies(z, lanePositions);
+        }, 1);
 
         // Set spawner on game
         game.setObstacleSpawner(obstacleSpawner);
@@ -1220,7 +1234,7 @@
             lagFactor: 0.15,
             spreadRadius: 0.9,
             xSpreadMultiplier: 100,
-            zSpreadMultiplier: 40
+            zSpreadMultiplier: 80
         };
 
         // Initialize HUD visibility
@@ -1232,7 +1246,26 @@
         const cameraDistanceSpeed = 200;
         const keys = {};
 
-        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+
+            // Handle restart on game over
+            if (game.state === 'GAME_OVER' && e.key.toLowerCase() === 'r') {
+                // Reset player
+                player.blobCount = 5;
+                player.previousBlobCount = 5;
+                player.initializeSwarm();
+                player.setPosition(0, 0.5, 0);
+
+                // Reset game
+                game.reset();
+
+                // Restart playing
+                game.startPlaying();
+
+                console.log('Game restarted from game over');
+            }
+        });
         window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
         // Separate camera control and render loop that runs independently of game
@@ -1280,9 +1313,9 @@
         game.render = function() {
             originalRender();
 
-            // Update distance counter
+            // Update distance counter (uses display distance which freezes on game over)
             const distanceValue = document.getElementById('distanceValue');
-            distanceValue.textContent = Math.floor(game.getDistanceInMeters());
+            distanceValue.textContent = Math.floor(game.getDisplayDistanceInMeters());
 
             // Draw HUD
             if (!window.HIDE_HUD) {
@@ -1300,17 +1333,18 @@
 
                 ctx.fillText(`Camera: X=${camera.x.toFixed(0)} Y=${camera.y.toFixed(0)} Z=${camera.z.toFixed(0)} Pitch=${camera.angle.toFixed(1)}° Dist=${camera.distance.toFixed(0)}`, hudX, hudY);
                 ctx.fillText(`Player: X=${player.x.toFixed(1)} Y=${player.y.toFixed(1)} Z=${player.z.toFixed(1)}`, hudX, hudY + lineHeight);
-                ctx.fillText(`Distance: ${game.getDistanceInMeters().toFixed(1)} m`, hudX, hudY + lineHeight * 2);
+                ctx.fillText(`Distance: ${game.getDisplayDistanceInMeters().toFixed(1)} m (actual: ${game.getDistanceInMeters().toFixed(1)} m)`, hudX, hudY + lineHeight * 2);
                 ctx.fillText(`Blob Count: ${player.getBlobCount()}`, hudX, hudY + lineHeight * 3);
+                ctx.fillText(`State: ${game.state}`, hudX, hudY + lineHeight * 4);
 
                 if (obstacleSpawner) {
-                    ctx.fillText(`Obstacle Groups: ${obstacleSpawner.getActiveGroupCount()} (${obstacleSpawner.getTotalObstacleCount()} total)`, hudX, hudY + lineHeight * 4.5);
+                    ctx.fillText(`Obstacle Groups: ${obstacleSpawner.getActiveGroupCount()} (${obstacleSpawner.getTotalObstacleCount()} total)`, hudX, hudY + lineHeight * 5.5);
 
                     // Display queue state
                     const queueState = obstacleSpawner.getQueueState();
-                    ctx.fillText(`Queue:`, hudX, hudY + lineHeight * 5.5);
+                    ctx.fillText(`Queue:`, hudX, hudY + lineHeight * 6.5);
                     queueState.forEach((item, idx) => {
-                        ctx.fillText(`  [${idx}] Z=${item.spawnZ} (${item.distanceMeters}m) - ${item.obstacleCount} obstacles`, hudX, hudY + lineHeight * (6.5 + idx));
+                        ctx.fillText(`  [${idx}] Z=${item.spawnZ} (${item.distanceMeters}m) - ${item.obstacleCount} obstacles`, hudX, hudY + lineHeight * (7.5 + idx));
                     });
                 }
 
@@ -1339,6 +1373,45 @@
                 ctx.moveTo(0, wallpaper.debugInfo.horizonScreenY);
                 ctx.lineTo(ctx.canvas.width, wallpaper.debugInfo.horizonScreenY);
                 ctx.stroke();
+                ctx.restore();
+            }
+
+            // Draw Game Over screen if in GAME_OVER state (MUST BE LAST to appear on top)
+            if (game.state === 'GAME_OVER') {
+                ctx.save();
+
+                // Semi-transparent overlay
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+                // Game Over text
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = '#ff0000';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 48px "Press Start 2P", cursive';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                const centerX = ctx.canvas.width / 2;
+                const centerY = ctx.canvas.height / 2;
+
+                ctx.fillText('GAME OVER', centerX, centerY - 80);
+
+                // Final distance
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#00ffff';
+                ctx.fillStyle = '#00ffff';
+                ctx.font = 'bold 24px "Press Start 2P", cursive';
+                const finalDistance = game.getDisplayDistanceInMeters().toFixed(1);
+                ctx.fillText(`Distance: ${finalDistance}m`, centerX, centerY);
+
+                // Restart instructions
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ffffff';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '16px "Press Start 2P", cursive';
+                ctx.fillText('Press R to Restart', centerX, centerY + 80);
+
                 ctx.restore();
             }
         };
@@ -1669,6 +1742,13 @@
             window.SWARM_PARAMS.zSpreadMultiplier = parseInt(e.target.value);
             document.getElementById('swarmZSpreadMultValue').textContent = e.target.value;
             player.initializeSwarm();
+            if (!game.isRunning) game.render();
+        });
+
+        document.getElementById('spriteHeightMult').addEventListener('input', (e) => {
+            const value = parseInt(e.target.value) / 100; // Convert to 0.1 - 1.5 range
+            player.spriteHeightMultiplier = value;
+            document.getElementById('spriteHeightMultValue').textContent = value.toFixed(2);
             if (!game.isRunning) game.render();
         });
 

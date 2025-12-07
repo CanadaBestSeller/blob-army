@@ -16,7 +16,7 @@ export class ObstacleSpawner {
 
         // Queue settings
         this.maxObstacleGroups = 4; // Keep 4 groups of obstacles active
-        this.groupSpacing = 8 / GameParameters.METERS_PER_PIXEL; // 8 meters between obstacle groups (converted to world units)
+        this.groupSpacing = 12 / GameParameters.METERS_PER_PIXEL; // 12 meters between obstacle groups (converted to world units)
         this.cleanupDistance = -2 / GameParameters.METERS_PER_PIXEL; // 2 meters past player (negative = behind)
 
         // Active obstacles queue
@@ -54,12 +54,12 @@ export class ObstacleSpawner {
         const player = this.game.entities.find(e => e.constructor.name === 'Player');
         const playerZ = player ? player.z : 0;
 
-        // Start spawning obstacles ahead of the player at 8m intervals
-        // Convert 8 meters to world units
+        // Start spawning obstacles ahead of the player at 12m intervals
+        // Convert meters to world units
         const metersToWorld = 1 / GameParameters.METERS_PER_PIXEL;
-        this.nextSpawnZ = playerZ + (5 * metersToWorld); // First obstacles appear at 8 meters
+        this.nextSpawnZ = playerZ + (5 * metersToWorld); // First obstacles appear at 5 meters
 
-        // Spawn initial groups (4 groups at 8m, 16m, 24m, 32m)
+        // Spawn initial groups (4 groups at 5m, 17m, 29m, 41m)
         for (let i = 0; i < this.maxObstacleGroups; i++) {
             this.spawnObstacleGroup();
         }
@@ -132,8 +132,17 @@ export class ObstacleSpawner {
 
         // Check if oldest obstacle group is past the cleanup threshold
         const oldestGroup = this.obstacleQueue[0];
+
+        // Find the furthest Z position in the group (accounting for obstacles spread across Z-axis)
+        let furthestZ = oldestGroup.spawnZ;
+        oldestGroup.obstacles.forEach(obstacle => {
+            if (obstacle.z > furthestZ) {
+                furthestZ = obstacle.z;
+            }
+        });
+
         // Distance past player (positive = player has passed the obstacle)
-        const distancePastPlayer = player.z - oldestGroup.spawnZ;
+        const distancePastPlayer = player.z - furthestZ;
 
         // cleanupDistance is negative (e.g., -200 for 2m past), so we check if we've exceeded it
         // When distancePastPlayer > abs(cleanupDistance), the obstacle is far enough past the player

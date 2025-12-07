@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projection System Test - 01C</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            font-family: 'Mulish', sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .info {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #aaaaaa;
+        }
+
+        #testCanvas {
+            border: 2px solid #4a4a6a;
+            background: #2d2d44;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #00ff88;
+            border: none;
+            border-radius: 4px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #00dd77;
+        }
+    </style>
+</head>
+<body>
+    <h1>Projection Test - Camera & Entity Base Class</h1>
+    <div class="info">
+        <p>Move the cube and camera in 3D space to test depth perception</p>
+        <p><strong>W/A/S/D/Q/E:</strong> Move cube | <strong>Arrow Keys + I/K:</strong> Move camera</p>
+        <p><strong>Z/X:</strong> Rotate cube | <strong>J/L:</strong> Rotate camera view</p>
+    </div>
+
+    <canvas id="testCanvas" width="800" height="600"></canvas>
+
+    <div class="controls">
+        <button id="resetView">Reset Position</button>
+    </div>
+
+    <script type="module">
+        import { project } from './rendering/Projection.js';
+        import { Camera } from './rendering/Camera.js';
+
+        const canvas = document.getElementById('testCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Camera (can now move)
+        const camera = new Camera(0, 0, -400);
+
+        // Cube position
+        let cubeX = 0;
+        let cubeY = 0;
+        let cubeZ = 0;
+
+        // Cube rotation
+        let cubeRotationY = 0;
+
+        // Camera rotation (view rotation)
+        let cameraRotationY = 0;
+
+        // Movement speeds
+        const cubeSpeed = 150;
+        const cameraSpeed = 150;
+        const rotationSpeed = 2; // radians per second
+        let lastTime = performance.now();
+
+        // Input tracking
+        const keys = {};
+        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        // Simple cube vertices (100x100x100)
+        const cubeVertices = [
+            {x: -50, y: -50, z: -50}, {x: 50, y: -50, z: -50},
+            {x: 50, y: 50, z: -50}, {x: -50, y: 50, z: -50},
+            {x: -50, y: -50, z: 50}, {x: 50, y: -50, z: 50},
+            {x: 50, y: 50, z: 50}, {x: -50, y: 50, z: 50}
+        ];
+
+        // Cube edges
+        const cubeEdges = [
+            [0,1],[1,2],[2,3],[3,0], // Front
+            [4,5],[5,6],[6,7],[7,4], // Back
+            [0,4],[1,5],[2,6],[3,7]  // Sides
+        ];
+
+        // Rotation helper
+        function rotateY(point, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return {
+                x: point.x * cos - point.z * sin,
+                y: point.y,
+                z: point.x * sin + point.z * cos
+            };
+        }
+
+        function update(dt) {
+            // Move cube with WASDQE
+            if (keys['w']) cubeZ += cubeSpeed * dt;
+            if (keys['s']) cubeZ -= cubeSpeed * dt;
+            if (keys['a']) cubeX -= cubeSpeed * dt;
+            if (keys['d']) cubeX += cubeSpeed * dt;
+            if (keys['q']) cubeY += cubeSpeed * dt;
+            if (keys['e']) cubeY -= cubeSpeed * dt;
+
+            // Rotate cube with Z/X
+            if (keys['z']) cubeRotationY -= rotationSpeed * dt;
+            if (keys['x']) cubeRotationY += rotationSpeed * dt;
+
+            // Move camera with Arrow keys + I/K
+            if (keys['arrowup']) camera.z += cameraSpeed * dt;
+            if (keys['arrowdown']) camera.z -= cameraSpeed * dt;
+            if (keys['arrowleft']) camera.x -= cameraSpeed * dt;
+            if (keys['arrowright']) camera.x += cameraSpeed * dt;
+            if (keys['i']) camera.y += cameraSpeed * dt;
+            if (keys['k']) camera.y -= cameraSpeed * dt;
+
+            // Rotate camera view with J/L
+            if (keys['j']) cameraRotationY -= rotationSpeed * dt;
+            if (keys['l']) cameraRotationY += rotationSpeed * dt;
+        }
+
+        function render() {
+            const now = performance.now();
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            update(dt);
+
+            // Clear
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Center point
+            ctx.fillStyle = '#666';
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw ground lane (orange translucent rectangle on the ground)
+            const laneWidth = 200;
+            const laneLength = 2000;
+            const laneCorners = [
+                {x: -laneWidth/2, y: 0, z: -500},
+                {x: laneWidth/2, y: 0, z: -500},
+                {x: laneWidth/2, y: 0, z: laneLength},
+                {x: -laneWidth/2, y: 0, z: laneLength}
+            ];
+
+            const laneProjected = laneCorners.map(corner => {
+                const rotated = rotateY(corner, cameraRotationY);
+                return project(rotated.x, rotated.y, rotated.z, camera.getPosition());
+            });
+
+            ctx.fillStyle = 'rgba(255, 140, 0, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2 + laneProjected[0].x, canvas.height/2 - laneProjected[0].y);
+            ctx.lineTo(canvas.width/2 + laneProjected[1].x, canvas.height/2 - laneProjected[1].y);
+            ctx.lineTo(canvas.width/2 + laneProjected[2].x, canvas.height/2 - laneProjected[2].y);
+            ctx.lineTo(canvas.width/2 + laneProjected[3].x, canvas.height/2 - laneProjected[3].y);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw lane border
+            ctx.strokeStyle = 'rgba(255, 140, 0, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Project and draw cube
+            const projected = cubeVertices.map(v => {
+                // Apply cube's own rotation
+                let rotated = rotateY(v, cubeRotationY);
+                // Translate to world position
+                rotated = {
+                    x: rotated.x + cubeX,
+                    y: rotated.y + cubeY,
+                    z: rotated.z + cubeZ
+                };
+                // Apply camera rotation
+                rotated = rotateY(rotated, cameraRotationY);
+                return project(rotated.x, rotated.y, rotated.z, camera.getPosition());
+            });
+
+            // Draw edges
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 2;
+            cubeEdges.forEach(([i, j]) => {
+                ctx.beginPath();
+                ctx.moveTo(canvas.width/2 + projected[i].x, canvas.height/2 - projected[i].y);
+                ctx.lineTo(canvas.width/2 + projected[j].x, canvas.height/2 - projected[j].y);
+                ctx.stroke();
+            });
+
+            // Draw vertices
+            ctx.fillStyle = '#ffff00';
+            projected.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(canvas.width/2 + p.x, canvas.height/2 - p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Info
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Mulish';
+            ctx.fillText(`Cube: X=${cubeX.toFixed(0)} Y=${cubeY.toFixed(0)} Z=${cubeZ.toFixed(0)} Rot=${(cubeRotationY * 180 / Math.PI).toFixed(0)}°`, 10, 20);
+            ctx.fillText(`Camera: X=${camera.x.toFixed(0)} Y=${camera.y.toFixed(0)} Z=${camera.z.toFixed(0)} ViewRot=${(cameraRotationY * 180 / Math.PI).toFixed(0)}°`, 10, 40);
+            ctx.fillText(`Relative depth: ${(cubeZ - camera.z).toFixed(0)}`, 10, 60);
+
+            requestAnimationFrame(render);
+        }
+
+        document.getElementById('resetView').addEventListener('click', () => {
+            cubeX = cubeY = cubeZ = 0;
+            cubeRotationY = 0;
+            cameraRotationY = 0;
+            camera.setPosition(0, 0, -400);
+        });
+
+        console.log('Projection test started');
+        render();
+    </script>
+</body>
+</html>

@@ -179,9 +179,19 @@ export class Gate extends Entity3D {
 
         // Check collision with the swarm - any blob can trigger the gate
         const halfWidth = this.width / 2;
-        const gateDepth = 1.5; // Collision zone depth (increased for better detection)
+        const gateDepth = 10; // Collision zone depth (increased for better detection with lag)
 
-        // If player has swarmBlobs, check each blob
+        // Check player's center position first (most reliable)
+        const centerInZRange = Math.abs(player.z - this.z) < gateDepth;
+        if (centerInZRange) {
+            const centerInXRange = player.x >= (this.x - halfWidth) && player.x <= (this.x + halfWidth);
+            if (centerInXRange) {
+                console.log(`Gate collision detected! Type: ${this.type}, Value: ${this.value}, Player count: ${player.getBlobCount()}`);
+                return true; // Center blob hit the gate
+            }
+        }
+
+        // Also check swarm blobs (in case only outer blobs hit)
         if (player.swarmBlobs && player.swarmBlobs.length > 0) {
             for (const blob of player.swarmBlobs) {
                 // Check if blob's Z position is within the gate's depth
@@ -193,19 +203,14 @@ export class Gate extends Entity3D {
                                       blob.currentX <= (this.x + halfWidth);
 
                     if (isInXRange) {
+                        console.log(`Gate collision detected (blob)! Type: ${this.type}, Value: ${this.value}, Player count: ${player.getBlobCount()}`);
                         return true; // Any blob colliding triggers the gate
                     }
                 }
             }
-            return false;
-        } else {
-            // Fallback to center position if no swarm data
-            const isInZRange = Math.abs(player.z - this.z) < gateDepth;
-            if (!isInZRange) return false;
-
-            const isInXRange = player.x >= (this.x - halfWidth) && player.x <= (this.x + halfWidth);
-            return isInXRange;
         }
+
+        return false;
     }
 
     /**
@@ -215,14 +220,18 @@ export class Gate extends Entity3D {
     applyEffect(player) {
         if (this.consumed) return;
 
+        const oldCount = player.getBlobCount();
+
         if (this.type === 'multiplication') {
             // Multiply blob count
-            const currentCount = player.getBlobCount();
-            const newCount = Math.floor(currentCount * this.value);
+            const newCount = Math.floor(oldCount * this.value);
             player.blobCount = newCount;
+            console.log(`Gate MULTIPLY: ${oldCount} × ${this.value} = ${newCount}`);
         } else {
             // Add or subtract blobs
             player.addBlobs(Math.floor(this.value));
+            const newCount = player.getBlobCount();
+            console.log(`Gate ADD: ${oldCount} + ${Math.floor(this.value)} = ${newCount}`);
         }
 
         // Mark gate as consumed
