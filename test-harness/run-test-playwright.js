@@ -21,10 +21,35 @@ const BASE_URL = 'http://localhost:8080';
 const TEST_DURATION = 10000; // 10 seconds
 const SCREENSHOT_TIMES = [1000, 5000, 10000]; // 1s, 5s, 10s
 const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots');
+const REFERENCE_DIR = path.join(__dirname, 'screenshots-reference');
+const PREVIOUS_DIR = path.join(__dirname, 'screenshots-previous');
 
-// Ensure screenshots directory exists
+// Ensure directories exist
 if (!fs.existsSync(SCREENSHOTS_DIR)) {
     fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+}
+if (!fs.existsSync(REFERENCE_DIR)) {
+    fs.mkdirSync(REFERENCE_DIR, { recursive: true });
+}
+if (!fs.existsSync(PREVIOUS_DIR)) {
+    fs.mkdirSync(PREVIOUS_DIR, { recursive: true });
+}
+
+/**
+ * Archive current screenshots to previous directory
+ */
+function archiveCurrentScreenshots() {
+    console.log('📦 Archiving current screenshots to previous...');
+
+    // Move current screenshots to previous directory
+    SCREENSHOT_TIMES.forEach(time => {
+        const currentFile = path.join(SCREENSHOTS_DIR, `screenshot-${time}ms.jpg`);
+        const previousFile = path.join(PREVIOUS_DIR, `screenshot-${time}ms.jpg`);
+
+        if (fs.existsSync(currentFile)) {
+            fs.copyFileSync(currentFile, previousFile);
+        }
+    });
 }
 
 /**
@@ -32,6 +57,9 @@ if (!fs.existsSync(SCREENSHOTS_DIR)) {
  */
 async function runTest() {
     console.log('🚀 Starting Blob Army test harness (Playwright)...');
+
+    // Archive existing screenshots before running new test
+    archiveCurrentScreenshots();
 
     const browser = await chromium.launch({
         headless: true
@@ -136,12 +164,33 @@ async function runTest() {
             console.log(`  - ${(time/1000).toFixed(1)}s: ${filename}`);
         });
 
-        // Display screenshots in terminal (just the paths)
-        console.log('\n📁 Screenshot files:');
+        // Display all screenshot locations
+        console.log('\n📁 Screenshot directories:');
+        console.log('  Current iteration:');
         SCREENSHOT_TIMES.forEach(time => {
             const filename = path.join(SCREENSHOTS_DIR, `screenshot-${time}ms.jpg`);
             if (fs.existsSync(filename)) {
-                console.log(`  ✓ ${filename}`);
+                console.log(`    ✓ ${filename}`);
+            }
+        });
+
+        console.log('  Previous iteration:');
+        SCREENSHOT_TIMES.forEach(time => {
+            const filename = path.join(PREVIOUS_DIR, `screenshot-${time}ms.jpg`);
+            if (fs.existsSync(filename)) {
+                console.log(`    ✓ ${filename}`);
+            } else {
+                console.log(`    - ${filename} (not available)`);
+            }
+        });
+
+        console.log('  Reference (golden):');
+        SCREENSHOT_TIMES.forEach(time => {
+            const filename = path.join(REFERENCE_DIR, `screenshot-${time}ms.jpg`);
+            if (fs.existsSync(filename)) {
+                console.log(`    ✓ ${filename}`);
+            } else {
+                console.log(`    - ${filename} (not set - copy from screenshots/ to set reference)`);
             }
         });
 

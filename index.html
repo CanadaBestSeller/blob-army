@@ -465,6 +465,34 @@
             font-style: italic;
         }
 
+        /* Speed Counter */
+        .speed-counter {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            font-size: 2rem;
+            font-weight: 400;
+            color: #00ff00;
+            text-shadow:
+                0 0 1px currentColor,
+                0 0 15px currentColor,
+                0 0 25px currentColor,
+                0 0 35px currentColor;
+            z-index: 2000;
+            font-family: 'Press Start 2P', cursive;
+            font-style: italic;
+            pointer-events: none;
+            user-select: none;
+            letter-spacing: 0.1rem;
+            transition: color 0.3s ease;
+        }
+
+        .speed-counter .unit {
+            font-size: 1rem;
+            margin-left: 0.2rem;
+            font-style: italic;
+        }
+
         /* Touch Control Tutorial */
         .touch-tutorial {
             position: fixed;
@@ -777,6 +805,16 @@
                 font-size: 1rem;
             }
 
+            .speed-counter {
+                bottom: 60px;
+                right: 10px;
+                font-size: 1.3rem;
+            }
+
+            .speed-counter .unit {
+                font-size: 0.7rem;
+            }
+
             .debug-panel.mobile-hidden {
                 display: none;
             }
@@ -859,6 +897,11 @@
             <div class="song-title" id="songTitle">Loading...</div>
             <div class="song-artist" id="songArtist"></div>
         </div>
+    </div>
+
+    <!-- Speed Counter -->
+    <div class="speed-counter" id="speedCounter">
+        <span id="speedValue">0.0</span><span class="unit">m/s</span>
     </div>
 
     <!-- Distance Counter -->
@@ -1089,7 +1132,7 @@
         import { ObstacleSpawner } from './js/01C/systems/ObstacleSpawner.js';
         import { MathGateGenerator } from './js/01C/systems/MathGateGenerator.js';
         import { EnemyGenerator } from './js/01C/systems/EnemyGenerator.js';
-        import { ComputedValues } from './js/01C/game/GameParameters.js';
+        import { GameParameters, ComputedValues } from './js/01C/game/GameParameters.js';
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -1316,6 +1359,37 @@
             // Update distance counter (uses display distance which freezes on game over)
             const distanceValue = document.getElementById('distanceValue');
             distanceValue.textContent = Math.floor(game.getDisplayDistanceInMeters());
+
+            // Update speed counter with color gradient from green to red
+            const speedValue = document.getElementById('speedValue');
+            const speedCounter = document.getElementById('speedCounter');
+            const currentSpeedMps = game.getSpeedInMetersPerSecond();
+            speedValue.textContent = currentSpeedMps.toFixed(1);
+
+            // Calculate color based on speed (green at min, red at max)
+            const minSpeed = GameParameters.WORLD_SCROLL_SPEED_MIN * GameParameters.METERS_PER_PIXEL;
+            const maxSpeed = GameParameters.WORLD_SCROLL_SPEED_MAX * GameParameters.METERS_PER_PIXEL;
+            const speedProgress = Math.min((currentSpeedMps - minSpeed) / (maxSpeed - minSpeed), 1.0);
+
+            // Interpolate from bright green to bright yellow to bright red
+            // Add white component to brighten mid-range colors
+            let red, green, blue;
+            if (speedProgress < 0.5) {
+                // Green to Yellow (0.0 to 0.5)
+                const t = speedProgress * 2; // 0 to 1
+                red = Math.floor(t * 255);
+                green = 255;
+                blue = 0;
+            } else {
+                // Yellow to Red (0.5 to 1.0)
+                const t = (speedProgress - 0.5) * 2; // 0 to 1
+                red = 255;
+                green = Math.floor((1 - t) * 255);
+                blue = 0;
+            }
+
+            const colorHex = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
+            speedCounter.style.color = colorHex;
 
             // Draw HUD
             if (!window.HIDE_HUD) {

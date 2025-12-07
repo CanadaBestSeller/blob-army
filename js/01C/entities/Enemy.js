@@ -22,7 +22,7 @@ export class Enemy extends Entity3D {
 
         // Sprite properties - skull
         this.spriteSheet = new Image();
-        this.spriteSheet.src = 'js/01C/assets/skull-v1.png';
+        this.spriteSheet.src = 'js/01C/assets/skull-v2.png';
         this.spriteLoaded = false;
         this.spriteSheet.onload = () => {
             this.spriteLoaded = true;

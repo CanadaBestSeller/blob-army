@@ -9,7 +9,10 @@ export const GameParameters = {
     FRAME_TIME: 1000 / 60, // milliseconds per frame
 
     // World & Scrolling
-    WORLD_SCROLL_SPEED: 200, // pixels per second (forward movement)
+    WORLD_SCROLL_SPEED: 200, // pixels per second (forward movement) - DEPRECATED, use speed ramping
+    WORLD_SCROLL_SPEED_MIN: 200, // Starting speed in pixels/second
+    WORLD_SCROLL_SPEED_MAX: 800, // Maximum speed in pixels/second
+    SPEED_RAMP_DURATION: 60, // Seconds to reach max speed
     METERS_PER_PIXEL: 0.01, // conversion factor for score
 
     // Player

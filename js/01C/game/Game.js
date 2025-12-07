@@ -25,6 +25,8 @@ export class Game {
         this.lastTime = 0;
         this.distanceTraveled = 0; // In world units
         this.finalDistance = 0; // Distance when game over occurred
+        this.currentSpeed = GameParameters.WORLD_SCROLL_SPEED_MIN; // Current speed in pixels/second
+        this.gameTime = 0; // Time elapsed since game started (for speed ramping)
 
         // Entities (managed by renderer, but we track them here too)
         this.entities = [];
@@ -106,8 +108,19 @@ export class Game {
      * @param {number} deltaTime - Time elapsed since last frame (seconds)
      */
     update(deltaTime) {
+        // Update game time and speed ramping (ONLY during PLAYING, not PREPLAY)
+        if (this.state === 'PLAYING') {
+            this.gameTime += deltaTime;
+
+            // Calculate speed with ramping (linear interpolation from min to max)
+            const speedProgress = Math.min(this.gameTime / GameParameters.SPEED_RAMP_DURATION, 1.0);
+            this.currentSpeed = GameParameters.WORLD_SCROLL_SPEED_MIN +
+                (GameParameters.WORLD_SCROLL_SPEED_MAX - GameParameters.WORLD_SCROLL_SPEED_MIN) * speedProgress;
+        }
+        // PREPLAY keeps minimum speed (no ramping)
+
         // World scrolling speed
-        const scrollSpeed = GameParameters.WORLD_SCROLL_SPEED;
+        const scrollSpeed = this.currentSpeed;
 
         // Track distance traveled (continues even in game over for world scrolling)
         this.distanceTraveled += scrollSpeed * deltaTime;
@@ -124,8 +137,8 @@ export class Game {
         };
 
         // Move player forward (not gates or track - they stay fixed in world space)
-        // Only move player in PLAYING state
-        if (this.state === 'PLAYING' && player) {
+        // Move player in both PREPLAY and PLAYING states for scrolling effect
+        if ((this.state === 'PREPLAY' || this.state === 'PLAYING') && player) {
             player.z += scrollSpeed * deltaTime;
         }
 
@@ -195,10 +208,20 @@ export class Game {
     }
 
     /**
+     * Get current speed in meters per second
+     * @returns {number} Speed in m/s
+     */
+    getSpeedInMetersPerSecond() {
+        return this.currentSpeed * GameParameters.METERS_PER_PIXEL;
+    }
+
+    /**
      * Reset the game
      */
     reset() {
         this.distanceTraveled = 0;
+        this.gameTime = 0;
+        this.currentSpeed = GameParameters.WORLD_SCROLL_SPEED_MIN;
         this.camera.setPosition(0, GameParameters.CAMERA_HEIGHT, 0);
 
         // Reset all entities that have a reset method
