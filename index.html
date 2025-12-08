@@ -621,6 +621,7 @@
 
         .play-overlay.active {
             opacity: 1;
+            pointer-events: auto;
         }
 
         .play-button-large {
@@ -1598,8 +1599,13 @@
                 return;
             }
 
-            // Hide play overlay
+            // Hide play overlay (remove active class first for transition)
             playOverlay.classList.remove('active');
+
+            // After transition, completely hide it to prevent any interaction
+            setTimeout(() => {
+                playOverlay.style.display = 'none';
+            }, 300); // Match the CSS transition duration
 
             // Make player visible
             player.visible = true;
@@ -1855,6 +1861,7 @@
         // Initialize in PREPLAY state
         player.visible = false; // Hide player initially
         game.enterPreplay(); // Start PREPLAY state (scrolling, but no player/gates)
+        playOverlay.style.display = 'flex'; // Ensure it's visible
         playOverlay.classList.add('active'); // Show play button
 
         console.log('Blob Army initialized in PREPLAY state');

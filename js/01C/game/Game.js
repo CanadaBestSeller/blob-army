@@ -159,6 +159,7 @@ export class Game {
         if (this.state === 'PLAYING' && player) {
             this.checkGateCollisions(player);
             this.checkEnemyCollisions(player);
+            this.checkBulletGateCollisions(player);
 
             // Check for game over (no fighters left)
             if (player.getBlobCount() <= 0) {
@@ -395,5 +396,31 @@ export class Game {
                 }
             }
         }
+    }
+
+    /**
+     * Check collisions between player bullets and gates
+     * @param {Player} player - The player entity
+     */
+    checkBulletGateCollisions(player) {
+        if (!player || !player.getBullets) return;
+
+        const bullets = player.getBullets();
+        if (bullets.length === 0) return;
+
+        // Find all gate entities that haven't been consumed
+        const gates = this.entities.filter(e => e.constructor.name === 'Gate' && !e.consumed);
+
+        bullets.forEach(bullet => {
+            if (!bullet.isActive()) return;
+
+            gates.forEach(gate => {
+                if (gate.checkBulletCollision(bullet)) {
+                    // Bullet hits gate
+                    gate.takeDamage(1);
+                    bullet.deactivate();
+                }
+            });
+        });
     }
 }

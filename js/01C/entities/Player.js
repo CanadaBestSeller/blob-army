@@ -6,6 +6,7 @@
 import { Entity3D } from './Entity3D.js';
 import { project } from '../rendering/Projection.js';
 import { GameParameters } from '../game/GameParameters.js';
+import { Bullet } from './Bullet.js';
 
 export class Player extends Entity3D {
     /**
@@ -46,6 +47,13 @@ export class Player extends Entity3D {
         // Swarm properties
         this.swarmBlobs = []; // Array of swarm blob objects
         this.initializeSwarm();
+
+        // Bullet properties
+        this.bullets = []; // Array of active bullets
+        this.shootCadence = 0.5; // Time between shots in seconds
+        this.nextShotTimes = []; // Track when each blob can shoot next
+        this.muzzleFlashDuration = 0.1; // Duration of muzzle flash in seconds
+        this.muzzleFlashes = []; // Track active muzzle flashes
     }
 
     /**
@@ -270,6 +278,21 @@ export class Player extends Entity3D {
 
         // Update swarm blob positions with lag
         this.updateSwarmPositions(deltaTime);
+
+        // Update bullet shooting
+        this.updateShooting(deltaTime, gameState);
+
+        // Update existing bullets
+        this.bullets.forEach(bullet => bullet.update(deltaTime, gameState));
+
+        // Remove inactive bullets
+        this.bullets = this.bullets.filter(bullet => bullet.isActive());
+
+        // Update muzzle flashes (remove expired ones)
+        this.muzzleFlashes = this.muzzleFlashes.filter(flash => {
+            flash.timeRemaining -= deltaTime;
+            return flash.timeRemaining > 0;
+        });
     }
 
     /**
@@ -302,6 +325,71 @@ export class Player extends Entity3D {
                 blob.currentZ += (targetZ - blob.currentZ) * distanceFactor;
             }
         });
+    }
+
+    /**
+     * Update shooting logic for all fighters in the swarm
+     * @param {number} deltaTime - Time elapsed since last frame
+     * @param {Object} gameState - Current game state
+     */
+    updateShooting(deltaTime, gameState) {
+        const currentTime = performance.now() / 1000; // Current time in seconds
+
+        // Initialize shot times if not done yet
+        if (this.nextShotTimes.length === 0) {
+            // Stagger the initial shot times so fighters don't all shoot at once
+            this.swarmBlobs.forEach((blob, index) => {
+                this.nextShotTimes.push(currentTime + (index * this.shootCadence / this.swarmBlobs.length));
+            });
+        }
+
+        // Update shot times array if blob count changed
+        while (this.nextShotTimes.length < this.swarmBlobs.length) {
+            this.nextShotTimes.push(currentTime);
+        }
+        while (this.nextShotTimes.length > this.swarmBlobs.length) {
+            this.nextShotTimes.pop();
+        }
+
+        // Check each fighter and shoot if ready
+        this.swarmBlobs.forEach((blob, index) => {
+            if (currentTime >= this.nextShotTimes[index]) {
+                this.shootBulletFromBlob(blob);
+                this.nextShotTimes[index] = currentTime + this.shootCadence;
+            }
+        });
+    }
+
+    /**
+     * Shoot a bullet from a specific blob
+     * @param {Object} blob - The blob to shoot from
+     */
+    shootBulletFromBlob(blob) {
+        // Get nose position (top of the fighter sprite)
+        const noseOffset = -0.4; // Nose is above the center Y position
+
+        // Create bullet at nose position
+        const bullet = new Bullet(
+            blob.currentX,
+            this.y + noseOffset,
+            blob.currentZ
+        );
+
+        this.bullets.push(bullet);
+
+        // Add muzzle flash
+        this.muzzleFlashes.push({
+            blobIndex: this.swarmBlobs.indexOf(blob),
+            timeRemaining: this.muzzleFlashDuration
+        });
+    }
+
+    /**
+     * Get all active bullets
+     * @returns {Array} Array of bullet objects
+     */
+    getBullets() {
+        return this.bullets;
     }
 
     /**
@@ -385,6 +473,9 @@ export class Player extends Entity3D {
         ctx.fillText(this.blobCount.toString(), finalX, countY);
 
         ctx.restore();
+
+        // Draw all bullets
+        this.bullets.forEach(bullet => bullet.draw(ctx, camera));
     }
 
     /**
@@ -481,6 +572,27 @@ export class Player extends Entity3D {
                 displayWidth,
                 displayHeight
             );
+        }
+
+        // Draw muzzle flash if this blob is flashing
+        // Find the index of this blob in the swarmBlobs array
+        const blobIndex = this.swarmBlobs.findIndex(b => b.id === blob.id);
+        const flashIndex = this.muzzleFlashes.findIndex(flash => flash.blobIndex === blobIndex);
+        if (flashIndex !== -1) {
+            // Flash the nose area (top center of sprite)
+            const noseX = finalX;
+            const noseY = finalY - displayHeight / 2;
+            const flashSize = 8 * projected.scale;
+
+            ctx.save();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ff0000';
+            ctx.fillStyle = '#ff0000';
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            ctx.arc(noseX, noseY, flashSize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
         }
 
         ctx.restore();

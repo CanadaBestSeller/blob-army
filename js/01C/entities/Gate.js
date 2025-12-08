@@ -30,6 +30,20 @@ export class Gate extends Entity3D {
         this.color = value >= 0
             ? GameParameters.COLOR_GATE_POSITIVE
             : GameParameters.COLOR_GATE_NEGATIVE;
+
+        // Load fighter sprite
+        this.fighterSprite = new Image();
+        this.fighterSprite.src = 'js/01C/assets/stealth-fighter-v2.png';
+        this.spriteLoaded = false;
+        this.fighterSprite.onload = () => {
+            this.spriteLoaded = true;
+        };
+
+        // Health system
+        this.maxHealth = 20;
+        this.health = 20;
+        this.hitFlashDuration = 0.1; // Duration of hit flash in seconds
+        this.hitFlashTimeRemaining = 0; // Time remaining for current flash
     }
 
     /**
@@ -38,8 +52,10 @@ export class Gate extends Entity3D {
      * @param {Object} gameState - Current game state
      */
     update(deltaTime, gameState) {
-        // Gates don't have their own update logic
-        // They're moved forward by the world scrolling in Game.js
+        // Update hit flash timer
+        if (this.hitFlashTimeRemaining > 0) {
+            this.hitFlashTimeRemaining -= deltaTime;
+        }
     }
 
     /**
@@ -79,7 +95,12 @@ export class Gate extends Entity3D {
 
         // Create gradient from bottom (translucent) to top (transparent)
         // Use global gate color if set, otherwise default yellow
-        const gateColor = window.GATE_COLOR || { r: 255, g: 255, b: 0, a: 0.6 };
+        let gateColor = window.GATE_COLOR || { r: 255, g: 255, b: 0, a: 0.6 };
+
+        // Flash white when hit
+        if (this.hitFlashTimeRemaining > 0) {
+            gateColor = { r: 255, g: 255, b: 255, a: 0.9 };
+        }
 
         const gradient = ctx.createLinearGradient(
             center.x + projected[0].x, center.y - projected[0].y, // Bottom
@@ -109,46 +130,106 @@ export class Gate extends Entity3D {
         ctx.stroke();
         ctx.restore();
 
-        // Draw value text in center of gate (vertically centered at height/2)
+        // Draw HP number in center of gate (vertically centered at height/2)
         const gateCenter = project(this.x, this.height / 2, this.z, camPos);
-        const textX = center.x + gateCenter.x;
-        const textY = center.y - gateCenter.y;
+        const centerX = center.x + gateCenter.x;
+        const centerY = center.y - gateCenter.y;
 
         // Calculate font size based on distance (scale)
         const baseFontSize = 35;
         const fontSize = Math.max(8, baseFontSize * gateCenter.scale);
 
-        // Determine what text to display
+        // Determine what to display
         const isPreplay = gameState.isPreplay || false;
-        let displayText;
 
         if (isPreplay) {
-            displayText = 'Press Play';
+            // Show "Press Play" text in preplay mode
+            ctx.save();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = GameParameters.COLOR_GATE_TEXT;
+            ctx.fillStyle = GameParameters.COLOR_GATE_TEXT;
+            ctx.font = `${fontSize}px 'Press Start 2P', cursive`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Press Play', centerX, centerY);
+            ctx.shadowBlur = 40;
+            ctx.fillText('Press Play', centerX, centerY);
+            ctx.restore();
         } else {
-            // Format based on gate type
-            if (this.type === 'multiplication') {
-                // Format multiplier with × symbol as integer
-                displayText = `×${Math.floor(this.value)}`;
-            } else {
-                // Format addition with + or - sign (integer)
-                displayText = this.value >= 0 ? `+${Math.floor(this.value)}` : `${Math.floor(this.value)}`;
+            // Draw HP number in center of gate
+            ctx.save();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = GameParameters.COLOR_GATE_TEXT;
+            ctx.fillStyle = GameParameters.COLOR_GATE_TEXT;
+            ctx.font = `${fontSize}px 'Press Start 2P', cursive`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const hpText = this.health.toString();
+            ctx.fillText(hpText, centerX, centerY);
+            ctx.shadowBlur = 40;
+            ctx.fillText(hpText, centerX, centerY);
+            ctx.restore();
+
+            // Draw symbol (+ or ×) and fighter icon ABOVE the gate
+            const gateTop = project(this.x, this.height, this.z, camPos);
+            const topX = center.x + gateTop.x;
+            const topY = center.y - gateTop.y;
+
+            const symbol = this.type === 'multiplication' ? '×' : '+';
+            const topFontSize = Math.max(6, fontSize * 0.7); // Slightly smaller for above gate
+
+            // Calculate spacing for symbol and icon
+            const spacing = topFontSize * 0.5;
+
+            // Measure symbol width to position elements
+            ctx.save();
+            ctx.font = `${topFontSize}px 'Press Start 2P', cursive`;
+            const symbolWidth = ctx.measureText(symbol).width;
+
+            // Calculate icon size
+            const iconSize = topFontSize * 1.8;
+
+            // Calculate total width to center the group
+            const totalWidth = symbolWidth + spacing + iconSize;
+            const startX = topX - totalWidth / 2;
+
+            // Position above the gate (offset upward)
+            const aboveOffset = topFontSize * 1.5;
+            const aboveY = topY - aboveOffset;
+
+            // Draw symbol with glow effect
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = GameParameters.COLOR_GATE_TEXT;
+            ctx.fillStyle = GameParameters.COLOR_GATE_TEXT;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+
+            const symbolX = startX;
+            ctx.fillText(symbol, symbolX, aboveY);
+            ctx.shadowBlur = 40;
+            ctx.fillText(symbol, symbolX, aboveY);
+
+            // Draw fighter icon to the right of the symbol
+            if (this.spriteLoaded) {
+                const iconX = startX + symbolWidth + spacing;
+                const iconY = aboveY - iconSize / 2;
+
+                // Add glow effect for the icon
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = GameParameters.COLOR_GATE_TEXT;
+
+                ctx.drawImage(
+                    this.fighterSprite,
+                    iconX,
+                    iconY,
+                    iconSize,
+                    iconSize
+                );
             }
+
+            ctx.restore();
         }
-
-        // Add text glow effect with Press Start 2P font
-        ctx.save();
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = GameParameters.COLOR_GATE_TEXT;
-        ctx.fillStyle = GameParameters.COLOR_GATE_TEXT;
-        ctx.font = `${fontSize}px 'Press Start 2P', cursive`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // Draw text with multiple glow layers for stronger effect
-        ctx.fillText(displayText, textX, textY);
-        ctx.shadowBlur = 40;
-        ctx.fillText(displayText, textX, textY);
-        ctx.restore();
     }
 
     /**
@@ -214,11 +295,12 @@ export class Gate extends Entity3D {
     }
 
     /**
-     * Apply gate effect to player
+     * Apply gate effect to player (only if health is depleted)
      * @param {Player} player - The player entity
      */
     applyEffect(player) {
-        if (this.consumed) return;
+        // Only apply effect if gate health is depleted
+        if (this.consumed || this.health > 0) return;
 
         const oldCount = player.getBlobCount();
 
@@ -236,5 +318,53 @@ export class Gate extends Entity3D {
 
         // Mark gate as consumed
         this.consumed = true;
+    }
+
+    /**
+     * Check collision with a bullet
+     * @param {Bullet} bullet - The bullet to check
+     * @returns {boolean} True if bullet hits this gate
+     */
+    checkBulletCollision(bullet) {
+        if (!bullet.isActive() || this.consumed) return false;
+
+        const halfWidth = this.width / 2;
+        const gateDepth = 10;
+
+        // Check if bullet is within gate bounds
+        const inZRange = Math.abs(bullet.z - this.z) < gateDepth;
+        const inXRange = bullet.x >= (this.x - halfWidth) && bullet.x <= (this.x + halfWidth);
+        const inYRange = bullet.y >= 0 && bullet.y <= this.height;
+
+        return inZRange && inXRange && inYRange;
+    }
+
+    /**
+     * Take damage from a bullet
+     * @param {number} damage - Amount of damage to take
+     */
+    takeDamage(damage = 1) {
+        if (this.health <= 0) return;
+
+        this.health -= damage;
+        if (this.health < 0) this.health = 0;
+
+        // Trigger hit flash
+        this.hitFlashTimeRemaining = this.hitFlashDuration;
+
+        console.log(`Gate hit! Health: ${this.health}/${this.maxHealth}`);
+
+        // If health depleted, gate can be consumed
+        if (this.health === 0) {
+            console.log(`Gate destroyed! Can now be consumed.`);
+        }
+    }
+
+    /**
+     * Check if gate is destroyed (health depleted)
+     * @returns {boolean} True if gate health is zero
+     */
+    isDestroyed() {
+        return this.health <= 0;
     }
 }
