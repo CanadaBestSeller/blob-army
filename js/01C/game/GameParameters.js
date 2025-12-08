@@ -12,7 +12,7 @@ export const GameParameters = {
     WORLD_SCROLL_SPEED: 200, // pixels per second (forward movement) - DEPRECATED, use speed ramping
     WORLD_SCROLL_SPEED_MIN: 192, // Starting speed in pixels/second (69 km/h)
     WORLD_SCROLL_SPEED_MAX: 1167, // Maximum speed in pixels/second (420 km/h)
-    SPEED_RAMP_DURATION: 60, // Seconds to reach max speed
+    SPEED_RAMP_DURATION: 600, // Seconds to reach max speed (10 minutes)
     METERS_PER_PIXEL: 0.01, // conversion factor for world space (obstacles, markers) - DO NOT CHANGE
     DISPLAY_DISTANCE_MULTIPLIER: 10, // Multiplier for display purposes (distance counter shows 10x actual)
 
