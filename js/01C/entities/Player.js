@@ -33,8 +33,10 @@ export class Player extends Entity3D {
         this.spriteSheet = new Image();
         this.spriteSheet.src = 'js/01C/assets/stealth-fighter-v2.png';
         this.spriteLoaded = false;
+        this.spritePixelData = null; // Store pixel data for collision detection
         this.spriteSheet.onload = () => {
             this.spriteLoaded = true;
+            this.extractPixelData();
         };
 
         // Sprite dimensions (will be calculated after image loads)
@@ -44,6 +46,21 @@ export class Player extends Entity3D {
         // Swarm properties
         this.swarmBlobs = []; // Array of swarm blob objects
         this.initializeSwarm();
+    }
+
+    /**
+     * Extract pixel data from sprite for pixel-perfect collision detection
+     */
+    extractPixelData() {
+        // Create a temporary canvas to extract pixel data
+        const canvas = document.createElement('canvas');
+        canvas.width = this.spriteSheet.width;
+        canvas.height = this.spriteSheet.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(this.spriteSheet, 0, 0);
+
+        // Get image data
+        this.spritePixelData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
 
     /**
@@ -109,7 +126,10 @@ export class Player extends Entity3D {
             frameOffset: 0,
             isCenter: true,
             spawnTime: 0, // Center blob doesn't fade in
-            fadeInDuration: 0
+            fadeInDuration: 0,
+            dying: false, // Death animation flag
+            deathStartTime: 0, // When death animation started
+            deathDuration: 500 // Death animation duration in milliseconds
         });
 
         // Create additional blobs around the center with random spread
@@ -141,7 +161,10 @@ export class Player extends Entity3D {
                 isCenter: false,
                 distanceFromCenter: distanceFromCenter, // Store for distance-based lag
                 spawnTime: Date.now(), // Track when blob was spawned for fade-in
-                fadeInDuration: 500 // Fade-in duration in milliseconds
+                fadeInDuration: 500, // Fade-in duration in milliseconds
+                dying: false, // Death animation flag
+                deathStartTime: 0, // When death animation started
+                deathDuration: 500 // Death animation duration in milliseconds
             });
         }
     }
@@ -188,7 +211,10 @@ export class Player extends Entity3D {
                 isCenter: false,
                 distanceFromCenter: distanceFromCenter,
                 spawnTime: Date.now(), // Track when blob was spawned for fade-in
-                fadeInDuration: 500 // Fade-in duration in milliseconds
+                fadeInDuration: 500, // Fade-in duration in milliseconds
+                dying: false, // Death animation flag
+                deathStartTime: 0, // When death animation started
+                deathDuration: 500 // Death animation duration in milliseconds
             });
         }
     }
@@ -391,21 +417,71 @@ export class Player extends Entity3D {
 
         ctx.save();
 
-        // Apply fade-in alpha
-        ctx.globalAlpha = fadeProgress;
+        // Handle death animation
+        let alpha = fadeProgress;
+        let deathProgress = 0;
+        if (blob.dying) {
+            const timeSinceDeath = Date.now() - blob.deathStartTime;
+            deathProgress = Math.min(1, timeSinceDeath / blob.deathDuration);
+
+            // Fade out during death animation
+            alpha = fadeProgress * (1 - deathProgress);
+        }
+
+        // Apply alpha
+        ctx.globalAlpha = alpha;
 
         // Draw stealth fighter sprite
         // Center the sprite at the position
         const drawX = finalX - displayWidth / 2;
         const drawY = finalY - displayHeight / 2;
 
-        ctx.drawImage(
-            this.spriteSheet,
-            drawX,
-            drawY,
-            displayWidth,
-            displayHeight
-        );
+        // If dying, tint the sprite bright red
+        if (blob.dying && deathProgress < 1) {
+            // Draw sprite to temporary canvas for color manipulation
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = displayWidth;
+            tempCanvas.height = displayHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // Draw original sprite
+            tempCtx.drawImage(
+                this.spriteSheet,
+                0,
+                0,
+                displayWidth,
+                displayHeight
+            );
+
+            // Get image data and tint it red
+            const imageData = tempCtx.getImageData(0, 0, displayWidth, displayHeight);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const alpha = data[i + 3];
+                if (alpha > 0) {
+                    // Make it bright red
+                    data[i] = 255;     // R
+                    data[i + 1] = 0;   // G
+                    data[i + 2] = 0;   // B
+                    // Keep original alpha
+                }
+            }
+
+            tempCtx.putImageData(imageData, 0, 0);
+
+            // Draw tinted sprite to main canvas
+            ctx.drawImage(tempCanvas, drawX, drawY);
+        } else {
+            // Draw normal sprite
+            ctx.drawImage(
+                this.spriteSheet,
+                drawX,
+                drawY,
+                displayWidth,
+                displayHeight
+            );
+        }
 
         ctx.restore();
     }
@@ -430,5 +506,25 @@ export class Player extends Entity3D {
             this.blobCount = 0;
         }
         console.log(`addBlobs: ${before} + ${count} = ${this.blobCount}`);
+    }
+
+    /**
+     * Get pixel data for collision detection
+     * @returns {ImageData} The sprite's pixel data
+     */
+    getPixelData() {
+        return this.spritePixelData;
+    }
+
+    /**
+     * Mark a blob as dying and start its death animation
+     * @param {number} index - Index of the blob in swarmBlobs array
+     */
+    killBlob(index) {
+        if (index >= 0 && index < this.swarmBlobs.length) {
+            const blob = this.swarmBlobs[index];
+            blob.dying = true;
+            blob.deathStartTime = Date.now();
+        }
     }
 }

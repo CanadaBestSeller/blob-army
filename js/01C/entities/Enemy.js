@@ -24,13 +24,30 @@ export class Enemy extends Entity3D {
         this.spriteSheet = new Image();
         this.spriteSheet.src = 'js/01C/assets/skull-v2.png';
         this.spriteLoaded = false;
+        this.spritePixelData = null; // Store pixel data for collision detection
         this.spriteSheet.onload = () => {
             this.spriteLoaded = true;
+            this.extractPixelData();
         };
 
         // Sprite dimensions
         this.spriteDisplaySize = 120; // Base display size in pixels
         this.spriteHeightMultiplier = 1.0; // Full height (no shrinkage)
+    }
+
+    /**
+     * Extract pixel data from sprite for pixel-perfect collision detection
+     */
+    extractPixelData() {
+        // Create a temporary canvas to extract pixel data
+        const canvas = document.createElement('canvas');
+        canvas.width = this.spriteSheet.width;
+        canvas.height = this.spriteSheet.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(this.spriteSheet, 0, 0);
+
+        // Get image data
+        this.spritePixelData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
 
     /**
@@ -91,19 +108,22 @@ export class Enemy extends Entity3D {
     }
 
     /**
-     * Check if a blob is colliding with this enemy using sprite bounding boxes
+     * Check if a blob is colliding with this enemy using pixel-perfect detection
      * @param {Object} blob - The blob object with currentX, currentZ properties
      * @param {number} playerY - The player's Y position (all blobs share same Y)
      * @param {Camera} camera - Camera object for projection
+     * @param {ImageData} blobPixelData - Pixel data from the fighter sprite
      * @returns {boolean} True if blob is colliding with enemy
      */
-    checkBlobCollision(blob, playerY, camera) {
-        // Don't collide if already consumed
-        if (this.consumed) return false;
+    checkBlobCollision(blob, playerY, camera, blobPixelData) {
+        // Don't collide if already consumed or no pixel data available
+        if (this.consumed || !this.spritePixelData || !blobPixelData) return false;
 
         // Project both the enemy and blob to screen space
         const enemyProjected = project(this.x, this.y, this.z, camera.getPosition());
         const blobProjected = project(blob.currentX, playerY, blob.currentZ, camera.getPosition());
+
+        if (!enemyProjected || !blobProjected) return false;
 
         // Calculate enemy sprite bounding box in screen space
         const enemyWidth = this.spriteDisplaySize * enemyProjected.scale;
@@ -115,22 +135,71 @@ export class Enemy extends Entity3D {
         const enemyBottom = enemyProjected.y + enemyHeight / 2;
 
         // Calculate blob sprite bounding box in screen space
-        // Use player's sprite display size and height multiplier
-        const blobWidth = 72 * blobProjected.scale * blob.sizeMultiplier; // 72 is player's spriteDisplaySize
-        const blobHeight = 72 * blobProjected.scale * blob.sizeMultiplier * 0.5; // 0.5 is player's height multiplier
+        const blobWidth = 72 * blobProjected.scale * blob.sizeMultiplier;
+        const blobHeight = 72 * blobProjected.scale * blob.sizeMultiplier * 0.5;
 
         const blobLeft = blobProjected.x - blobWidth / 2;
         const blobRight = blobProjected.x + blobWidth / 2;
         const blobTop = blobProjected.y - blobHeight / 2;
         const blobBottom = blobProjected.y + blobHeight / 2;
 
-        // Check for AABB (Axis-Aligned Bounding Box) collision
-        const colliding = !(enemyRight < blobLeft ||
-                           enemyLeft > blobRight ||
-                           enemyBottom < blobTop ||
-                           enemyTop > blobBottom);
+        // First check AABB collision (cheap test)
+        const aabbColliding = !(enemyRight < blobLeft ||
+                               enemyLeft > blobRight ||
+                               enemyBottom < blobTop ||
+                               enemyTop > blobBottom);
 
-        return colliding;
+        if (!aabbColliding) return false;
+
+        // Calculate overlapping rectangle in screen space
+        const overlapLeft = Math.max(enemyLeft, blobLeft);
+        const overlapRight = Math.min(enemyRight, blobRight);
+        const overlapTop = Math.max(enemyTop, blobTop);
+        const overlapBottom = Math.min(enemyBottom, blobBottom);
+
+        // Sample pixels in the overlapping region
+        // We'll sample every few pixels for performance
+        const sampleStep = 2;
+
+        for (let screenY = overlapTop; screenY < overlapBottom; screenY += sampleStep) {
+            for (let screenX = overlapLeft; screenX < overlapRight; screenX += sampleStep) {
+                // Map screen coordinates to enemy sprite coordinates
+                const enemyU = (screenX - enemyLeft) / enemyWidth;
+                const enemyV = (screenY - enemyTop) / enemyHeight;
+                const enemySpriteX = Math.floor(enemyU * this.spriteSheet.width);
+                const enemySpriteY = Math.floor(enemyV * this.spriteSheet.height);
+
+                // Map screen coordinates to blob sprite coordinates
+                const blobU = (screenX - blobLeft) / blobWidth;
+                const blobV = (screenY - blobTop) / blobHeight;
+                const blobSpriteX = Math.floor(blobU * blobPixelData.width);
+                const blobSpriteY = Math.floor(blobV * blobPixelData.height);
+
+                // Check if both pixels are opaque (alpha > threshold)
+                const alphaThreshold = 128;
+
+                // Get enemy pixel alpha
+                if (enemySpriteX >= 0 && enemySpriteX < this.spritePixelData.width &&
+                    enemySpriteY >= 0 && enemySpriteY < this.spritePixelData.height) {
+                    const enemyIndex = (enemySpriteY * this.spritePixelData.width + enemySpriteX) * 4;
+                    const enemyAlpha = this.spritePixelData.data[enemyIndex + 3];
+
+                    // Get blob pixel alpha
+                    if (blobSpriteX >= 0 && blobSpriteX < blobPixelData.width &&
+                        blobSpriteY >= 0 && blobSpriteY < blobPixelData.height) {
+                        const blobIndex = (blobSpriteY * blobPixelData.width + blobSpriteX) * 4;
+                        const blobAlpha = blobPixelData.data[blobIndex + 3];
+
+                        // If both pixels are opaque, we have a collision
+                        if (enemyAlpha > alphaThreshold && blobAlpha > alphaThreshold) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

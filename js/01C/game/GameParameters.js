@@ -10,10 +10,11 @@ export const GameParameters = {
 
     // World & Scrolling
     WORLD_SCROLL_SPEED: 200, // pixels per second (forward movement) - DEPRECATED, use speed ramping
-    WORLD_SCROLL_SPEED_MIN: 200, // Starting speed in pixels/second
-    WORLD_SCROLL_SPEED_MAX: 800, // Maximum speed in pixels/second
+    WORLD_SCROLL_SPEED_MIN: 192, // Starting speed in pixels/second (69 km/h)
+    WORLD_SCROLL_SPEED_MAX: 1167, // Maximum speed in pixels/second (420 km/h)
     SPEED_RAMP_DURATION: 60, // Seconds to reach max speed
-    METERS_PER_PIXEL: 0.01, // conversion factor for score
+    METERS_PER_PIXEL: 0.01, // conversion factor for world space (obstacles, markers) - DO NOT CHANGE
+    DISPLAY_DISTANCE_MULTIPLIER: 10, // Multiplier for display purposes (distance counter shows 10x actual)
 
     // Player
     PLAYER_MOVEMENT_SPEED: 300, // pixels per second (horizontal)

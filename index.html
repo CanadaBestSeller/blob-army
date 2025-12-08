@@ -901,7 +901,7 @@
 
     <!-- Speed Counter -->
     <div class="speed-counter" id="speedCounter">
-        <span id="speedValue">0.0</span><span class="unit">m/s</span>
+        <span id="speedValue">0</span><span class="unit">km/h</span>
     </div>
 
     <!-- Distance Counter -->
@@ -1364,12 +1364,13 @@
             const speedValue = document.getElementById('speedValue');
             const speedCounter = document.getElementById('speedCounter');
             const currentSpeedMps = game.getSpeedInMetersPerSecond();
-            speedValue.textContent = currentSpeedMps.toFixed(1);
+            const currentSpeedKmh = currentSpeedMps * 3.6; // Convert m/s to km/h
+            speedValue.textContent = Math.floor(currentSpeedKmh);
 
-            // Calculate color based on speed (green at min, red at max)
-            const minSpeed = GameParameters.WORLD_SCROLL_SPEED_MIN * GameParameters.METERS_PER_PIXEL;
-            const maxSpeed = GameParameters.WORLD_SCROLL_SPEED_MAX * GameParameters.METERS_PER_PIXEL;
-            const speedProgress = Math.min((currentSpeedMps - minSpeed) / (maxSpeed - minSpeed), 1.0);
+            // Calculate color based on km/h (69 km/h = green, 420 km/h = red)
+            const minSpeedKmh = 69; // Starting speed in km/h
+            const maxSpeedKmh = 420; // Max speed in km/h for color gradient
+            const speedProgress = Math.min(Math.max((currentSpeedKmh - minSpeedKmh) / (maxSpeedKmh - minSpeedKmh), 0), 1.0);
 
             // Interpolate from bright green to bright yellow to bright red
             // Add white component to brighten mid-range colors

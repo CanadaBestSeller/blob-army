@@ -200,19 +200,19 @@ export class Game {
     }
 
     /**
-     * Get distance in meters
+     * Get distance in meters (for display, with 10x multiplier)
      * @returns {number} Distance in meters
      */
     getDistanceInMeters() {
-        return this.distanceTraveled * GameParameters.METERS_PER_PIXEL;
+        return this.distanceTraveled * GameParameters.METERS_PER_PIXEL * GameParameters.DISPLAY_DISTANCE_MULTIPLIER;
     }
 
     /**
-     * Get current speed in meters per second
+     * Get current speed in meters per second (for display, with 10x multiplier)
      * @returns {number} Speed in m/s
      */
     getSpeedInMetersPerSecond() {
-        return this.currentSpeed * GameParameters.METERS_PER_PIXEL;
+        return this.currentSpeed * GameParameters.METERS_PER_PIXEL * GameParameters.DISPLAY_DISTANCE_MULTIPLIER;
     }
 
     /**
@@ -290,7 +290,7 @@ export class Game {
         this.state = 'GAME_OVER';
         // Store the final distance at the moment of game over
         this.finalDistance = this.distanceTraveled;
-        console.log('Game Over! Final distance:', (this.finalDistance * GameParameters.METERS_PER_PIXEL).toFixed(1), 'm');
+        console.log('Game Over! Final distance:', (this.finalDistance * GameParameters.METERS_PER_PIXEL * GameParameters.DISPLAY_DISTANCE_MULTIPLIER).toFixed(1), 'm');
         // Keep running so we can still render the game over screen and world scrolling
     }
 
@@ -306,11 +306,11 @@ export class Game {
     }
 
     /**
-     * Get display distance in meters
+     * Get display distance in meters (with 10x multiplier for display)
      * @returns {number} Distance in meters
      */
     getDisplayDistanceInMeters() {
-        return this.getDisplayDistance() * GameParameters.METERS_PER_PIXEL;
+        return this.getDisplayDistance() * GameParameters.METERS_PER_PIXEL * GameParameters.DISPLAY_DISTANCE_MULTIPLIER;
     }
 
     /**
@@ -349,25 +349,29 @@ export class Game {
         // Get player's swarm blobs
         if (!player.swarmBlobs || player.swarmBlobs.length === 0) return;
 
-        const blobsToRemove = new Set(); // Use Set to avoid duplicates
+        // Get player's pixel data for collision detection
+        const playerPixelData = player.getPixelData();
+
+        const blobsToKill = new Set(); // Blobs to mark as dying
 
         enemies.forEach(enemy => {
             // Check each blob for collision with this enemy
             for (let i = player.swarmBlobs.length - 1; i >= 0; i--) {
-                // Skip blobs that are already marked for removal
-                if (blobsToRemove.has(i)) continue;
+                // Skip blobs that are already dying or marked for death
+                if (blobsToKill.has(i) || player.swarmBlobs[i].dying) continue;
 
                 const blob = player.swarmBlobs[i];
 
-                // Pass player's Y position and camera for sprite-based collision
-                if (enemy.checkBlobCollision(blob, player.y, this.camera)) {
-                    // Mark blob for removal
-                    blobsToRemove.add(i);
+                // Pass player's Y position, camera, and pixel data for pixel-perfect collision
+                if (enemy.checkBlobCollision(blob, player.y, this.camera, playerPixelData)) {
+                    // Mark blob as dying (start death animation)
+                    player.killBlob(i);
+                    blobsToKill.add(i);
 
                     // Neutralize the enemy
                     enemy.neutralize();
 
-                    console.log(`Enemy neutralized! Blob ${i} destroyed. Remaining blobs: ${player.getBlobCount() - 1}`);
+                    console.log(`Enemy neutralized! Blob ${i} dying. Remaining blobs: ${player.getBlobCount() - 1}`);
 
                     // Only one blob can neutralize this enemy
                     break;
@@ -375,17 +379,21 @@ export class Game {
             }
         });
 
-        // Only update blob count if blobs were actually removed
-        if (blobsToRemove.size > 0) {
-            // Remove blobs that collided with enemies (in reverse order to maintain indices)
-            const blobIndices = Array.from(blobsToRemove).sort((a, b) => b - a);
-            blobIndices.forEach(index => {
-                player.swarmBlobs.splice(index, 1);
-            });
+        // Clean up blobs that have finished their death animation
+        const now = Date.now();
+        for (let i = player.swarmBlobs.length - 1; i >= 0; i--) {
+            const blob = player.swarmBlobs[i];
+            if (blob.dying) {
+                const timeSinceDeath = now - blob.deathStartTime;
+                if (timeSinceDeath >= blob.deathDuration) {
+                    // Death animation complete, remove the blob
+                    player.swarmBlobs.splice(i, 1);
 
-            // Update blob count to match the new swarm size
-            player.blobCount = player.swarmBlobs.length;
-            player.previousBlobCount = player.blobCount; // Prevent triggering blob count change logic
+                    // Update blob count to match the new swarm size
+                    player.blobCount = player.swarmBlobs.length;
+                    player.previousBlobCount = player.blobCount; // Prevent triggering blob count change logic
+                }
+            }
         }
     }
 }
